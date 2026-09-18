@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>兴地 · 地质与石油勘探学科教育大模型（原型）</title>
+<style>
+  :root{
+    --ink:#20251f; --paper:#fbfaf6; --muted:#6b6f66; --line:#e4e0d6;
+    --earth:#b07a3c; --earth-d:#8c5f2c; --teal:#2f6b5e; --teal-d:#1f4f44;
+    --s1:#c8923f; --s2:#a8503a; --s3:#6b7a3f; --s4:#4a5a6a; --s5:#d9c8a9;
+    --card:#ffffff; --shadow:0 10px 30px rgba(40,40,30,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+    background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.6}
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- 顶栏 ---------- */
+  header{position:sticky;top:0;z-index:50;background:rgba(251,250,246,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .bar{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:28px;
+    padding:12px 24px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:1px}
+  .brand .mark{width:34px;height:34px}
+  .brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:2px}
+  nav{display:flex;gap:6px;flex:1}
+  .nav-item{position:relative;padding:8px 14px;border-radius:8px;color:var(--ink);font-weight:600;font-size:15px;cursor:pointer}
+  .nav-item:hover{background:#f1ede3}
+  .nav-item .caret{font-size:10px;color:var(--muted);margin-left:4px}
+  .dropdown{position:absolute;top:46px;left:0;min-width:200px;background:#fff;border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);padding:8px;display:none}
+  .nav-item:hover .dropdown{display:block}
+  .dropdown a{display:block;padding:8px 12px;border-radius:8px;font-size:14px;color:#3a3f38}
+  .dropdown a:hover{background:#f6f3ec;color:var(--earth-d)}
+  .auth{display:flex;gap:10px;align-items:center}
+  .btn{padding:8px 18px;border-radius:999px;font-weight:600;cursor:pointer;border:1px solid transparent;font-size:14px}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn-solid{background:var(--teal);color:#fff}
+  .btn-solid:hover{background:var(--teal-d)}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;overflow:hidden;background:
+      radial-gradient(120% 90% at 50% -10%, #f3ede1 0%, #fbfaf6 55%);}
+  .strata{height:8px;display:flex}
+  .strata span{flex:1}
+  .hero-inner{max-width:1200px;margin:0 auto;padding:64px 24px 72px;text-align:center}
+  .eyebrow{display:inline-block;font-size:13px;letter-spacing:3px;color:var(--earth-d);
+    border:1px solid var(--earth);border-radius:999px;padding:4px 14px;margin-bottom:22px}
+  .title{font-size:68px;font-weight:900;letter-spacing:8px;line-height:1.05;
+    background:linear-gradient(180deg,#2b2b25,#7a5a2e);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .subtitle{font-size:22px;font-weight:600;color:#3a3f38;margin-top:10px}
+  .lede{color:var(--muted);max-width:620px;margin:16px auto 0;font-size:15px}
+
+  /* ---------- AI 助手卡片 ---------- */
+  .assistant{margin:38px auto 0;max-width:720px;background:var(--card);border:1px solid var(--line);
+    border-radius:20px;box-shadow:var(--shadow);text-align:left;overflow:hidden}
+  .assistant .head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .assistant .dot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(47,107,94,.15)}
+  .assistant .head b{font-size:15px}
+  .assistant .head span{margin-left:auto;font-size:12px;color:var(--muted)}
+  .chat{min-height:120px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+  .bubble{padding:10px 14px;border-radius:14px;max-width:80%;font-size:14px}
+  .bubble.ai{background:#f3efe6;color:#33312b;align-self:flex-start;border-bottom-left-radius:4px}
+  .bubble.me{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .modes{display:flex;gap:8px;padding:0 20px 14px;flex-wrap:wrap}
+  .chip{padding:6px 14px;border:1px solid var(--line);border-radius:999px;font-size:13px;cursor:pointer;color:#444;background:#fff}
+  .chip.active{background:var(--earth);color:#fff;border-color:var(--earth)}
+  .chip .new{font-size:10px;background:#e2553f;color:#fff;border-radius:6px;padding:0 5px;margin-left:6px;vertical-align:middle}
+  .inputbar{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--line);background:#fcfbf8}
+  .inputbar input{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:14px;outline:none}
+  .inputbar input:focus{border-color:var(--earth)}
+  .inputbar .send{background:var(--teal);color:#fff;border:none;border-radius:12px;padding:0 22px;font-weight:700;cursor:pointer}
+  .inputbar .send:hover{background:var(--teal-d)}
+
+  /* ---------- 浮窗 & 统计 ---------- */
+  .float{position:fixed;left:22px;top:50%;transform:translateY(-50%);z-index:40;
+    background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+  .float .ic{font-size:22px}
+  .float small{writing-mode:vertical-rl;font-size:12px;color:var(--muted);letter-spacing:2px}
+  .stats{position:fixed;right:22px;top:120px;z-index:40;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;font-size:13px;color:var(--muted)}
+  .stats b{display:block;font-size:24px;color:var(--ink);font-weight:800}
+
+  /* ---------- 四层架构 ---------- */
+  .layers{max-width:1200px;margin:0 auto;padding:72px 24px 40px}
+  .sec-title{text-align:center;font-size:30px;font-weight:800;margin-bottom:8px}
+  .sec-sub{text-align:center;color:var(--muted);margin-bottom:40px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .layer{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;position:relative;overflow:hidden}
+  .layer::before{content:"";position:absolute;left:0;top:0;width:6px;height:100%}
+  .layer.l1::before{background:var(--s1)} .layer.l2::before{background:var(--s2)}
+  .layer.l3::before{background:var(--s3)} .layer.l4::before{background:var(--s4)}
+  .layer h3{font-size:20px;margin-bottom:4px}
+  .layer .tag{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .layer ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .layer li{font-size:14px;color:#3a3f38;padding:8px 10px;background:#f8f6f1;border-radius:8px;cursor:pointer}
+  .layer li:hover{background:#f1ede3;color:var(--earth-d)}
+  .layer li span{font-size:11px;color:var(--muted);float:right}
+
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:28px 24px;text-align:center;color:var(--muted);font-size:13px}
+
+  @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.nav-item .dropdown{position:static}
+    .float,.stats{display:none}.title{font-size:48px}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}nav{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40"><defs>
+        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#c8923f"/><stop offset=".5" stop-color="#a8503a"/><stop offset="1" stop-color="#2f6b5e"/>
+        </linearGradient></defs>
+        <rect width="40" height="40" rx="9" fill="url(#g)"/>
+        <path d="M6 26 L14 18 L20 24 L28 14 L34 20" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="14" cy="18" r="2" fill="#fff"/><circle cx="28" cy="14" r="2" fill="#fff"/>
+      </svg>
+      <div>兴地<small>GEODISCIPLINE AI</small></div>
+    </div>
+
+    <nav>
+      <div class="nav-item">首页</div>
+      <div class="nav-item">基础层<span class="caret">▾</span>
+        <div class="dropdown"><a>AI 专业课程</a><a>人才培养方案</a></div>
+      </div>
+      <div class="nav-item">专业层<span class="caret">▾</span>
+        <div class="dropdown"><a>野外实习虚拟仿真</a><a>岩石物理实验仿真</a><a>储层/油气智能预报</a><a>数字岩心与测井实验</a><a>解释能力训练</a></div>
+      </div>
+      <div class="nav-item">学科层<span class="caret">▾</span>
+        <div class="dropdown"><a>学科动态</a><a>学科优势</a></div>
+      </div>
+      <div class="nav-item">应用层<span class="caret">▾</span>
+        <div class="dropdown"><a>测井智能解释</a><a>勘探方案智能设计</a><a>地震相智能识别</a><a>创造性思维</a></div>
+      </div>
+    </nav>
+
+    <div class="auth">
+      <button class="btn btn-ghost">登录</button>
+      <button class="btn btn-solid">注册</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="strata">
+    <span style="background:var(--s1)"></span><span style="background:var(--s2)"></span>
+    <span style="background:var(--s3)"></span><span style="background:var(--s4)"></span>
+    <span style="background:var(--s5)"></span>
+  </div>
+
+  <div class="hero-inner">
+    <span class="eyebrow">学科教育大模型 · 原型演示</span>
+    <div class="title">兴 地</div>
+    <div class="subtitle">地质与石油勘探学科教育大模型</div>
+    <p class="lede">以地质—石油勘探学科知识库为底座，融合 AI 学科助手与分层教学资源，服务地学类专业学生、石油行业从业者与科研教学团队。</p>
+
+    <div class="assistant">
+      <div class="head"><span class="dot"></span><b>学科 AI 学习助手</b><span>由本地大模型驱动</span></div>
+      <div class="chat" id="chat">
+        <div class="bubble ai">Hi，我是你的地质学科 AI 学习助手，欢迎随时向我提问！</div>
+      </div>
+      <div class="modes" id="modes">
+        <div class="chip active" data-mode="学科对话">学科对话</div>
+        <div class="chip" data-mode="地学搜索">地学搜索<span class="new">新</span></div>
+        <div class="chip" data-mode="学习探究">学习探究</div>
+      </div>
+      <div class="inputbar">
+        <input id="q" placeholder="输入您想了解的问题~（如：如何根据测井曲线判断储层？）" />
+        <button class="send" id="send">发送</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 左侧浮窗 -->
+<div class="float" title="AI 应用中心">
+  <div class="ic">🧭</div>
+  <small>AI 应用中心</small>
+</div>
+
+<!-- 右侧统计 -->
+<div class="stats">
+  <div>累计访问<b id="uv">140,380</b></div>
+  <div style="margin-top:10px">今日访问<b id="dv">224</b></div>
+</div>
+
+<section class="layers">
+  <div class="sec-title">四层学科架构</div>
+  <div class="sec-sub">基础层（学什么）→ 专业层（怎么练）→ 学科层（学科是什么）→ 应用层（怎么用）</div>
+  <div class="grid">
+    <div class="layer l1">
+      <h3>基础层</h3><div class="tag">课程体系 · 人才培养</div>
+      <ul>
+        <li>AI 专业课程<span>6 门</span></li>
+        <li>人才培养方案<span>微专业</span></li>
+      </ul>
+    </div>
+    <div class="layer l2">
+      <h3>专业层</h3><div class="tag">仿真 · 实验 · 训练</div>
+      <ul>
+        <li>野外实习虚拟仿真</li>
+        <li>岩石物理实验仿真</li>
+        <li>储层/油气智能预报</li>
+        <li>数字岩心与测井实验</li>
+        <li>解释能力训练</li>
+      </ul>
+    </div>
+    <div class="layer l3">
+      <h3>学科层</h3><div class="tag">动态 · 优势</div>
+      <ul>
+        <li>学科动态<span>前沿</span></li>
+        <li>学科优势<span>团队</span></li>
+      </ul>
+    </div>
+    <div class="layer l4">
+      <h3>应用层</h3><div class="tag">业务工具</div>
+      <ul>
+        <li>测井智能解释</li>
+        <li>勘探方案智能设计</li>
+        <li>地震相智能识别</li>
+        <li>创造性思维</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  兴地 · 地质与石油勘探学科教育大模型（原型）　|　参考：哈尔滨工程大学「兴海」学科教育大模型　|　命名/内容待定，可迭代
+</footer>
+
+<script>
+  // 模式切换
+  const modes = document.getElementById('modes');
+  let mode = '学科对话';
+  modes.addEventListener('click', e=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    modes.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); mode = c.dataset.mode;
+  });
+
+  // 模拟对话
+  const chat = document.getElementById('chat');
+  const q = document.getElementById('q');
+  const send = document.getElementById('send');
+  const reply = {
+    '学科对话':'（原型演示）已基于地质知识库检索：建议从岩性、孔隙度、电阻率三要素入手判识储层，详见「专业层·数字岩心与测井实验」。',
+    '地学搜索':'（原型演示）为「测井曲线 储层判断」找到 12 条资料：3 门课程、5 篇文献、4 个案例，已按相关度排序。',
+    '学习探究':'（原型演示）我们分步来：① 读取 GR/RT 曲线；② 识别低伽马、高阻段；③ 结合孔隙度验证。要不要我先出一道练习？'
+  };
+  function go(){
+    const v = q.value.trim(); if(!v) return;
+    chat.insertAdjacentHTML('beforeend', `<div class="bubble me">${v}</div>`);
+    q.value='';
+    setTimeout(()=>chat.insertAdjacentHTML('beforeend',
+      `<div class="bubble ai">[${mode}] ${reply[mode]}</div>`), 500);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  send.addEventListener('click', go);
+  q.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); });
+</script>
+</body>
+</html>

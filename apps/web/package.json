@@ -1,0 +1,27 @@
+{
+  "name": "@deep-geology/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.47.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "echarts": "^6.1.0",
+    "ol": "^10.10.0",
+    "pinia": "^2.3.1",
+    "three": "^0.186.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "~5.9.3",
+    "vite": "^6.0.5",
+    "vue-tsc": "^2.2.0"
+  }
+}

@@ -1,0 +1,16 @@
+fastapi==0.115.6
+httpx==0.28.1
+uvicorn[standard]==0.32.1
+pydantic-settings==2.7.0
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+redis==5.2.1
+alembic==1.14.0
+minio==7.2.12
+PyJWT[crypto]==2.14.0
+python-multipart==0.0.32
+pypdf==6.19.0
+python-docx==1.1.2
+python-pptx==1.0.2
+lasio==0.32
+prometheus-client==0.26.0

@@ -1,0 +1,26 @@
+# 单位信息配置文件
+# 用于配置网站的基本信息、品牌信息等
+
+# 组织信息
+organization:
+  name: "中国石油大学（北京）"                         # 完整组织名称
+  logo: "/cupb-emblem-red.png" # Logo文件路径（放在 web/public 目录下）
+  avatar: "/cupb-emblem-red.png" # 头像文件路径（放在 web/public 目录下）
+  login_bg: "/login-bg.jpg"  # 登录背景图片路径（放在 web/public 目录下）
+
+# 项目信息
+branding:
+  name: "深地智学"
+  title: "深地智学 - 地质学科智能体工作台"     # 系统标题
+  subtitle: "课程知识库 × 地学图谱 × 智能体协作"   # 副标题（subtitles 为空时使用）
+  subtitles:
+    - "地质知识与智能体协同，每个回答都可溯源"
+    - "从课程问答到研究任务，工具与沙盒一站完成"
+    - "课程、图谱与实践资料统一进入工作台"
+    - "Docker Compose 部署，教学数据保留在校内"
+
+# 页脚信息
+footer:
+  copyright: "© 深地智学 2026 v{{YUXI_VERSION}}"
+  user_agreement_url: "/protocols/user-agreement.template.html"
+  privacy_policy_url: "/protocols/privacy-policy.template.html"

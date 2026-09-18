@@ -1,0 +1,854 @@
+:root {
+  font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: #142d45;
+  background: #f4f7fb;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; background: #f4f7fb; }
+.assistant-bridge { font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #85b7ff; outline-offset: 3px; }
+
+.hero-shell {
+  min-height: 100svh;
+  position: relative;
+  overflow: hidden;
+  color: #f5fbff;
+  background: #061e4b;
+  isolation: isolate;
+}
+
+.hero-shell::before {
+  content: "";
+  position: absolute;
+  z-index: -3;
+  width: min(60vw, 920px);
+  height: min(60vw, 920px);
+  right: -15vw;
+  top: 15%;
+  border: 1px solid rgba(118, 177, 229, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 0 52px rgba(48, 106, 173, 0.06), 0 0 0 104px rgba(48, 106, 173, 0.05), 0 0 0 156px rgba(48, 106, 173, 0.035);
+}
+
+.hero-shell::after {
+  content: "";
+  position: absolute;
+  z-index: -3;
+  width: 58vw;
+  height: 48vh;
+  left: -8vw;
+  bottom: -20vh;
+  background: rgba(10, 65, 130, 0.45);
+  border-top: 1px solid rgba(142, 197, 244, 0.22);
+  transform: skewY(-10deg);
+}
+
+.strata { position: absolute; z-index: -2; left: -8vw; right: -8vw; opacity: 0.7; transform: rotate(-7deg); pointer-events: none; }
+.strata-a { height: 115px; bottom: -58px; border-top: 28px solid rgba(91, 139, 190, 0.24); border-bottom: 18px solid rgba(22, 75, 135, 0.56); }
+.strata-b { height: 70px; bottom: 13%; border-top: 8px solid rgba(148, 190, 224, 0.21); border-bottom: 20px solid rgba(9, 52, 105, 0.5); }
+.topographic-lines { position: absolute; z-index: -1; right: 10%; top: 27%; width: 28vw; height: 24vw; border: 1px solid rgba(160, 204, 242, 0.16); border-radius: 50%; opacity: 0.82; box-shadow: 0 0 0 24px rgba(160, 204, 242, 0.045), 0 0 0 48px rgba(160, 204, 242, 0.04), 0 0 0 72px rgba(160, 204, 242, 0.032); }
+
+.site-header { height: 112px; display: flex; align-items: center; gap: 20px; padding: 0 5.5vw; border-bottom: 1px solid rgba(197, 220, 249, 0.18); }
+.brand { display: inline-flex; align-items: center; gap: 11px; color: #fff; text-decoration: none; white-space: nowrap; }
+.brand-university-logo { display: block; width: auto; height: 48px; object-fit: contain; }
+.brand-mark { display: grid; place-items: center; width: 34px; height: 34px; color: #bad9ff; border: 1px solid rgba(186, 217, 255, 0.68); border-radius: 50%; }
+.brand-school { font-size: 17px; font-weight: 700; }
+.brand-divider { width: 1px; height: 22px; background: rgba(255, 255, 255, 0.35); }
+.brand-product { color: #f7fbff; font-size: 19px; font-weight: 800; }
+.home-nav { padding: 8px 10px; color: #d9e9fc; background: transparent; border: 0; font-size: 14px; white-space: nowrap; }
+.home-nav:hover { color: #fff; }
+.main-nav { display: flex; flex: 1; justify-content: center; align-self: stretch; min-width: 0; }
+.nav-group { position: relative; display: flex; align-items: center; min-width: 122px; border-left: 1px solid rgba(197, 220, 249, 0.16); }
+.nav-group-primary { width: 100%; padding: 19px 14px; color: #f1f7ff; background: transparent; border: 0; text-align: center; }
+.nav-group-primary span { display: block; font-size: 16px; font-weight: 700; }
+.nav-group-primary small { display: block; min-height: 17px; margin-top: 7px; color: rgba(210, 228, 250, 0.65); font-size: 10px; white-space: nowrap; }
+.nav-group:hover .nav-group-primary span, .nav-group:focus-within .nav-group-primary span { color: #fff; }
+.nav-group:hover .nav-group-primary, .nav-group:focus-within .nav-group-primary { background: rgba(104, 159, 222, 0.13); }
+/* The hover dropdown gives the label ladder a floor: pointing at any group drops a panel listing ALL
+   of its entries, so nothing becomes unreachable just because the window got smaller (same decision as
+   the portal header's .module-dropdown). These styles used to be a dark 188px panel toggled by display,
+   rendered by a template that no longer existed; the class now carries the portal dropdown's look —
+   white card sized to its widest entry (min-width keeps it at least group-wide), centred on the group,
+   opacity/visibility/transform animation. Gated to 761–1539px: at >=1540 every chip is inline already,
+   below 761px the hamburger drawer carries the list. The group box stretches to the header's bottom
+   edge (flex child of .main-nav), so top:100% lands the panel flush with the header's bottom and the
+   pointer never leaves hover while travelling into it. visibility:hidden also takes the closed panel's
+   buttons out of the tab order. */
+.nav-submenu { position: absolute; z-index: 30; top: 100%; left: 50%; display: none; width: max-content; min-width: 100%; max-width: calc(100vw - 32px); padding: 10px 12px; background: #fff; border: 1px solid rgba(8, 85, 141, .14); border-radius: 6px; box-shadow: 0 18px 34px rgba(6, 24, 51, .2); opacity: 0; visibility: hidden; transform: translate(-50%, -6px); transition: opacity 160ms ease, transform 160ms ease, visibility 160ms; }
+.nav-submenu button { padding: 8px 10px; color: #164f81; background: transparent; border: 0; border-radius: 4px; text-align: left; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+.nav-submenu button:hover, .nav-submenu button:focus-visible { color: #075a9d; background: #e8f4fc; outline: 0; }
+@media (min-width: 761px) and (max-width: 1539px) {
+  .nav-submenu { display: grid; gap: 2px; }
+  .nav-group:hover > .nav-submenu, .nav-group:focus-within > .nav-submenu { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-submenu { transition: none; }
+}
+.header-action { display: inline-flex; align-items: center; gap: 3px; padding: 8px 0; color: #fff; background: transparent; border: 0; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.mobile-menu-toggle, .mobile-navigation { display: none; }
+
+.hero-content { width: min(760px, calc(100% - 48px)); margin: 0 auto; padding: clamp(64px, 9vh, 105px) 0 148px; text-align: center; animation: reveal 700ms ease-out both; }
+.hero-identification { display: grid; justify-items: center; gap: 5px; color: #b7d8ff; font-size: 11px; letter-spacing: 0.12em; }
+.hero-identification span { width: 42px; height: 1px; background: #91c2fa; }
+.hero-identification small { color: rgba(183, 216, 255, 0.62); font-size: 8px; letter-spacing: 0.1em; }
+h1 { margin: 24px 0 0; font-family: "STKaiti", "KaiTi", serif; font-size: clamp(52px, 6.4vw, 84px); line-height: 1; letter-spacing: 0.12em; text-shadow: 0 8px 22px rgba(0, 11, 38, 0.2); }
+.hero-subtitle { margin: 15px 0 33px; color: #e6f1ff; font-size: clamp(20px, 2.3vw, 28px); font-weight: 600; letter-spacing: 0.07em; }
+
+.chat-workspace { overflow: hidden; padding: 20px; text-align: left; background: rgba(40, 94, 160, 0.27); border: 1px solid rgba(185, 215, 249, 0.29); border-radius: 12px; backdrop-filter: blur(10px); box-shadow: 0 24px 60px rgba(0, 12, 44, 0.19); }
+.chat-heading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 3px 10px 18px; }
+.assistant-pulse { display: grid; place-items: center; width: 27px; height: 27px; color: #1257a6; background: #e9f3ff; border-radius: 50%; animation: pulse 3s ease-in-out infinite; }
+.chat-heading p { margin: 0; flex: 0 1 auto; color: #f7fbff; font-size: 16px; font-weight: 500; }
+.chat-heading p strong { font-size: 18px; }
+.chat-history { min-height: 52px; display: grid; gap: 8px; padding: 0 6px 12px; }
+.message { width: fit-content; max-width: 88%; margin: 0; padding: 8px 12px; border-radius: 4px 12px 12px 12px; font-size: 14px; line-height: 1.55; }
+.message p { margin: 0; }
+.message.assistant { background: rgba(203, 223, 255, 0.14); color: #eef8fa; }
+.message.user { justify-self: end; background: #e5f0ff; color: #16345a; border-radius: 12px 4px 12px 12px; }
+.message-citations { display: grid; gap: 3px; margin-top: 8px; padding-top: 7px; color: #c5dce3; border-top: 1px solid rgba(207, 232, 238, 0.22); font-size: 11px; }
+.chat-composer { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 10px; min-height: 112px; padding: 16px 16px 46px; background: #fff; border: 1px solid rgba(190, 210, 235, 0.5); border-radius: 8px; }
+.chat-composer input { align-self: start; min-width: 0; padding: 8px 4px; color: #17314e; background: transparent; border: 0; outline: 0; font-size: 15px; }
+.chat-composer input::placeholder { color: #8a9eb7; }
+.send-button { align-self: end; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; color: #fff; background: #2271d2; border: 0; border-radius: 4px; font-weight: 700; transition: background 160ms ease, transform 160ms ease; }
+.send-button:not(:disabled):hover { background: #125bb3; transform: translateY(-1px); }
+.send-button:disabled { cursor: not-allowed; opacity: 0.55; }
+.mode-switcher { position: absolute; left: 13px; bottom: 9px; display: flex; gap: 3px; }
+.mode-switcher button { padding: 6px 8px; color: #7890ac; background: transparent; border: 1px solid transparent; border-radius: 3px; font-size: 12px; }
+.mode-switcher button span { display: none; }
+.mode-switcher button.active { color: #1f67bd; background: #edf5ff; }
+
+.ai-center-entry { position: absolute; left: 5.5vw; bottom: 41px; display: inline-flex; align-items: center; gap: 7px; padding: 0; color: #e8f2ff; background: transparent; border: 0; font-size: 15px; font-weight: 600; }
+.ai-center-entry:hover { color: #fff; }
+.hero-stats { position: absolute; right: 5.5vw; bottom: 36px; display: flex; gap: 31px; }
+.hero-stats div { display: grid; gap: 1px; }
+.hero-stats strong { color: rgba(202, 221, 248, 0.73); font-size: 11px; font-weight: 500; }
+.hero-stats span { color: #fff; font-size: 18px; font-weight: 700; }
+
+.section-shell { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }
+.resource-section { padding: 108px 0 92px; }
+.section-intro { width: min(650px, 100%); }
+.eyebrow { margin: 0 0 12px; color: #097d9d; font-size: 12px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+h2 { margin: 0; color: #112a41; font-family: "STKaiti", "KaiTi", serif; font-size: clamp(32px, 4vw, 48px); line-height: 1.15; }
+.section-intro > p:last-child, .learning-copy > p:last-child { color: #607283; line-height: 1.8; }
+.resource-toolbar { display: flex; gap: 20px; margin: 38px 0 26px; padding-bottom: 12px; border-bottom: 1px solid #cbd8dc; }
+.resource-toolbar button { padding: 0 0 8px; color: #647988; background: transparent; border: 0; border-bottom: 2px solid transparent; font-weight: 700; }
+.resource-toolbar button.selected { color: #0e5d7c; border-bottom-color: #d09f49; }
+.resource-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #d8e1e2; border-left: 1px solid #d8e1e2; }
+.resource-item { min-height: 230px; display: flex; flex-direction: column; padding: 24px; background: #f7faf9; border-right: 1px solid #d8e1e2; border-bottom: 1px solid #d8e1e2; transition: background 180ms ease, transform 180ms ease; }
+.resource-item:hover { background: #fff; transform: translateY(-3px); }
+.resource-meta { display: flex; justify-content: space-between; gap: 12px; color: #0b7899; font-size: 12px; font-weight: 700; }
+.resource-item h3 { margin: 22px 0 8px; color: #102c42; font-size: 21px; }
+.resource-item p { margin: 0; color: #687b89; font-size: 14px; line-height: 1.7; }
+.resource-item footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; color: #71848e; font-size: 12px; }
+.resource-link { display: inline-flex; align-items: center; gap: 5px; color: #0c6280; font-weight: 800; text-decoration: none; }
+.resource-link:hover, .resource-link:focus-visible { color: #084d66; text-decoration: underline; }
+.pending { color: #8f7250; }
+
+.learning-section { display: grid; grid-template-columns: 0.88fr 1.12fr; gap: 80px; padding: 110px 0; border-top: 1px solid #d6e0e2; }
+.learning-steps { display: grid; grid-template-columns: repeat(3, 1fr); align-items: end; gap: 20px; }
+.learning-steps > div { min-height: 190px; padding: 22px 0 0 18px; color: #0b5b76; border-left: 1px solid #a8c3ca; }
+.learning-steps span { display: block; margin-bottom: 28px; color: #c28d37; font-size: 12px; font-weight: 800; }
+.learning-steps h3 { margin: 14px 0 6px; color: #17384d; font-size: 17px; }
+.learning-steps p { margin: 0; color: #6a7e89; font-size: 13px; line-height: 1.7; }
+
+.practice-section { color: #eef7f7; background: #0a465f; }
+.practice-layout { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 80px; padding: 95px 0; }
+.practice-section h2 { color: #fff; }
+.practice-section .eyebrow { color: #d9b66f; }
+.practice-section p { color: #bcd3d8; line-height: 1.8; }
+.practice-list { border-top: 1px solid rgba(216, 235, 235, 0.25); }
+.practice-list > div { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; padding: 22px 0; border-bottom: 1px solid rgba(216, 235, 235, 0.25); }
+.practice-icon { display: grid; place-items: center; width: 38px; height: 38px; color: #d9b66f; border: 1px solid rgba(217, 182, 111, 0.64); border-radius: 50%; }
+.practice-list h3 { margin: 0; font-size: 17px; }
+.practice-list p { margin: 4px 0 0; font-size: 13px; }
+.construction { color: #bcd3d8; font-size: 12px; }
+
+.application-section { padding: 105px 0; }
+.application-columns { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; margin-top: 38px; border-top: 1px solid #ccdadd; }
+.application-columns article { min-height: 255px; padding: 27px; border-right: 1px solid #ccdadd; border-bottom: 1px solid #ccdadd; }
+.application-columns article:first-child { color: #fff; background: #0d5b76; }
+.feature-index { color: #9db9c3; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
+.application-columns h3 { margin: 35px 0 10px; font-size: 23px; }
+.application-columns p { color: #607582; line-height: 1.75; }
+.application-columns article:first-child p { color: #d0e3e5; }
+.application-feature button { display: inline-flex; align-items: center; gap: 6px; padding: 0; color: #e6c883; background: transparent; border: 0; font-weight: 800; }
+.site-footer { display: flex; justify-content: space-between; gap: 24px; padding: 30px 5.5vw; color: #8ba0ac; background: #062b4c; font-size: 13px; }
+.site-footer div { display: flex; gap: 13px; }
+.site-footer strong { color: #e0bd75; }
+
+@keyframes reveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(217, 182, 111, 0.32); } 50% { box-shadow: 0 0 0 8px rgba(217, 182, 111, 0); } }
+
+@media (max-width: 1120px) {
+  .site-header { gap: 18px; padding: 0 3vw; }
+  .home-nav { display: none; }
+  .nav-group { min-width: 0; }
+  .nav-group-primary { padding: 8px 10px; }
+  .nav-group-primary small { display: none; }
+  .hero-stats { display: none; }
+}
+
+@media (max-width: 760px) {
+  .hero-shell { min-height: 760px; }
+  .site-header { height: 72px; justify-content: space-between; }
+  .brand-school, .brand-divider, .main-nav, .home-nav { display: none; }
+  .brand-product { font-size: 17px; }
+  .header-action { font-size: 13px; }
+  .mobile-menu-toggle { display: inline-grid; place-items: center; width: 34px; height: 34px; color: #fff; background: transparent; border: 1px solid rgba(226, 240, 240, 0.45); border-radius: 3px; }
+  .mobile-navigation { position: absolute; z-index: 8; top: 72px; right: 0; left: 0; display: grid; gap: 1px; padding: 14px 5.5vw 18px; background: #0b3774; border-bottom: 1px solid rgba(226, 240, 240, 0.3); box-shadow: 0 18px 32px rgba(0, 13, 30, 0.3); }
+  .mobile-navigation section { display: grid; grid-template-columns: 96px repeat(3, minmax(0, 1fr)); align-items: center; gap: 4px; padding: 10px 0; border-bottom: 1px solid rgba(226, 240, 240, 0.16); }
+  .mobile-navigation section:last-child { border-bottom: 0; }
+  .mobile-navigation strong { color: #cfe5ff; font-size: 13px; }
+  .mobile-navigation button { min-width: 0; padding: 6px 2px; color: #e9f4f5; background: transparent; border: 0; font-size: 12px; text-align: left; }
+  .hero-content { width: min(100% - 30px, 760px); padding-top: 57px; padding-bottom: 118px; }
+  .hero-identification { font-size: 10px; }
+  h1 { margin-top: 20px; font-size: 53px; }
+  .hero-subtitle { margin-bottom: 25px; font-size: 20px; }
+  .chat-workspace { padding: 13px; }
+  .chat-heading { align-items: flex-start; padding: 3px 2px 13px; text-align: left; }
+  .chat-heading p { font-size: 14px; line-height: 1.55; }
+  .chat-heading p strong { font-size: 16px; }
+  .chat-composer { min-height: 118px; padding: 13px 12px 45px; }
+  .chat-composer input { font-size: 14px; }
+  .send-button { gap: 0; width: 38px; padding: 0; justify-content: center; font-size: 0; }
+  .mode-switcher { max-width: calc(100% - 23px); overflow-x: auto; }
+  .mode-switcher button { white-space: nowrap; }
+  .mode-switcher button span { display: none; }
+  .ai-center-entry { left: 50%; bottom: 29px; transform: translateX(-50%); white-space: nowrap; }
+  .topographic-lines { top: 38%; right: -14vw; width: 56vw; height: 56vw; }
+  .resource-grid, .application-columns, .learning-section, .practice-layout { grid-template-columns: 1fr; }
+  .learning-section, .practice-layout { gap: 40px; }
+  .learning-steps { grid-template-columns: 1fr; gap: 0; }
+  .learning-steps > div { min-height: auto; padding: 18px 0 18px 18px; }
+  .resource-toolbar { overflow-x: auto; white-space: nowrap; }
+  .site-footer { display: grid; }
+}
+
+/* Homepage visual language follows the reference portal's assistant module. */
+:root { font-family: "Alibaba PuHuiTi", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; color: #1e1e18; background: #f4f8fb; }
+body { background: #f4f8fb; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline-color: #0b6cb8; }
+
+.hero-shell { min-height: 100svh; color: #1e1e18; background: #e8f2fa; }
+.hero-shell::before { top: auto; right: auto; bottom: 7%; left: -6vw; width: 53vw; height: 88px; border: 0; border-radius: 0; background: #d9ecfa; box-shadow: 0 37px 0 #e2eef8, 0 74px 0 #d5e6f3; transform: rotate(-4deg); }
+.hero-shell::after { right: -12vw; bottom: 18%; left: auto; width: 38vw; height: 52px; background: #cfe4f6; border: 0; transform: rotate(6deg); }
+.strata { opacity: .48; }.strata-a { bottom: 0; border-top-color: #d8d5f5; border-bottom-color: #cbc9ea; }.strata-b { bottom: 22%; border-top-color: #dfddf8; border-bottom-color: #d5d3f0; }.topographic-lines { display: none; }
+
+.site-header { height: 82px; gap: 16px; padding: 0 4.2vw; background: rgba(255, 255, 255, .7); border-bottom-color: rgba(11, 108, 184, .14); backdrop-filter: blur(16px); }
+.brand { color: #1e1e18; }.brand-mark { width: 35px; height: 35px; color: #fff; background: #0b6cb8; border: 0; border-radius: 12px; box-shadow: 0 5px 12px rgba(11, 108, 184, .2); }.brand-school { font-size: 15px; }.brand-divider { background: #b9cfe0; }.brand-product { color: #0b4f8c; font-size: 18px; }.home-nav, .header-action { color: #3c5a70; }.home-nav:hover, .header-action:hover { color: #0b6cb8; }
+.main-nav { justify-content: flex-end; }.nav-group { min-width: 104px; border-left-color: #d3e2ee; }.nav-group-primary { padding: 10px 12px; color: #2f4f66; }.nav-group-primary span { font-size: 14px; }.nav-group-primary small { min-height: 14px; margin-top: 4px; color: #7d99ad; font-size: 9px; }.nav-group:hover .nav-group-primary, .nav-group:focus-within .nav-group-primary { background: #e3f1fb; }.nav-group:hover .nav-group-primary span, .nav-group:focus-within .nav-group-primary span { color: #0b6cb8; }
+
+.hero-content { width: min(760px, calc(100% - 48px)); padding: clamp(45px, 7vh, 80px) 0 72px; text-align: center; }.hero-identification { color: #0b6cb8; font-size: 10px; }.hero-identification span { background: #0b6cb8; }.hero-identification small { color: #7ba6c0; }.hero-content h1 { margin-top: 19px; color: #2d2d2d; font-family: "Alibaba PuHuiTi", "Microsoft YaHei", sans-serif; font-size: clamp(46px, 6vw, 70px); font-weight: 900; letter-spacing: .06em; text-shadow: none; }.hero-subtitle { margin: 11px 0 29px; color: #4d7290; font-size: clamp(17px, 2vw, 22px); font-weight: 500; letter-spacing: .05em; }
+.ai-center-entry { bottom: 25px; color: #3d6a8a; }.ai-center-entry:hover { color: #0b6cb8; }.hero-stats { bottom: 22px; gap: 23px; }.hero-stats strong { color: #6487a0; }.hero-stats span { color: #0d5aa0; }
+
+.eyebrow { color: #0b6cb8; }.section-intro h2, h2 { color: #2d2d2d; font-family: "Alibaba PuHuiTi", "Microsoft YaHei", sans-serif; font-weight: 800; }.resource-toolbar button.selected { color: #0b6cb8; border-bottom-color: #0b6cb8; }.resource-item { background: #fff; border-color: #dfeaf2; }.resource-item:hover { background: #f5faff; }.resource-meta, .resource-link { color: #0b6cb8; }.resource-item h3 { color: #2d2d2d; }.resource-link:hover, .resource-link:focus-visible { color: #095a9c; }.learning-steps > div { color: #0b6cb8; border-left-color: #c8e2f6; }.learning-steps span { color: #0b6cb8; }.learning-steps h3 { color: #2d2d2d; }.practice-section { background: #0b3a63; }.practice-section .eyebrow, .practice-icon { color: #a8d4f0; }.application-columns article:first-child { background: #0b6cb8; }.application-feature button { color: #d9ecfa; }.site-footer { background: #0d4a86; }.site-footer strong { color: #ffd79c; }
+
+@media (max-width: 760px) {
+  .hero-shell { min-height: auto; }.site-header { height: 70px; padding: 0 18px; background: rgba(255, 255, 255, .85); }.brand-product { font-size: 17px; }.mobile-menu-toggle { color: #0b6cb8; border-color: #9ec7e4; }.mobile-navigation { top: 70px; background: #fff; border-bottom-color: #d2e4f0; box-shadow: 0 18px 32px rgba(20, 70, 118, .14); }.mobile-navigation strong { color: #0b6cb8; }.mobile-navigation button { color: #3c5a70; }.mobile-navigation section { border-bottom-color: #e8f1f7; }.hero-content { width: min(100% - 28px, 760px); padding: 42px 0 78px; }.hero-content h1 { font-size: 45px; }.hero-stats { display: none; }.ai-center-entry { bottom: 25px; font-size: 13px; }
+}
+
+/* Target home page composition: four-tier header, immersive hero and assistant dock. */
+.hero-shell {
+  min-height: 936px;
+  color: #fff;
+  background:
+    linear-gradient(90deg, rgba(2, 42, 91, .82), rgba(8, 92, 173, .54) 48%, rgba(2, 45, 104, .8)),
+    radial-gradient(ellipse 44% 82% at 45% 62%, rgba(72, 153, 221, .35), transparent 68%),
+    linear-gradient(135deg, #034d9c 0%, #0a78c5 48%, #024586 100%);
+  isolation: isolate;
+}
+.hero-shell::before {
+  top: 154px;
+  right: 18%;
+  bottom: auto;
+  left: auto;
+  width: 54vw;
+  height: 54vw;
+  border: 1px solid rgba(204, 236, 255, .1);
+  border-radius: 48% 52% 60% 40%;
+  background: repeating-radial-gradient(ellipse at 45% 52%, transparent 0 31px, rgba(183, 224, 255, .06) 32px 33px);
+  box-shadow: none;
+  transform: rotate(-13deg);
+}
+.hero-shell::after {
+  top: 180px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: linear-gradient(180deg, transparent 44%, rgba(1, 25, 69, .18));
+  transform: none;
+}
+.strata { z-index: -1; opacity: .3; transform: rotate(-7deg); }.strata-a { bottom: 45px; border-top-color: #a3dbff; border-bottom-color: #08579e; }.strata-b { bottom: 25%; border-top-color: #75c3f4; border-bottom-color: #0969b7; }.topographic-lines { display: block; z-index: -1; top: 30%; right: 7%; width: 36vw; height: 28vw; border-color: rgba(192, 229, 255, .15); box-shadow: 0 0 0 28px rgba(193, 230, 255, .04), 0 0 0 56px rgba(193, 230, 255, .03), 0 0 0 84px rgba(193, 230, 255, .025); }
+
+.site-header { height: 180px; align-items: flex-start; gap: 0; padding: 49px 4.1vw 0; background: rgba(0, 49, 116, .28); border-bottom: 1px solid rgba(189, 224, 255, .1); backdrop-filter: none; }
+.brand { align-items: center; gap: 11px; height: 60px; padding-right: 30px; color: #fff; border-right: 1px solid rgba(211, 234, 255, .18); }.brand-mark { width: 38px; height: 38px; color: #dff5ff; background: rgba(6, 116, 205, .55); border: 1px solid rgba(225, 247, 255, .7); border-radius: 50%; box-shadow: none; }.brand-school { font-size: 20px; font-weight: 800; }.brand-divider, .brand-product { display: none; }.home-nav { height: 60px; margin: 0 21px; padding: 11px 12px; color: #fff; font-size: 20px; font-weight: 800; }.home-nav:hover { color: #fff; }
+.main-nav { flex: 1; justify-content: space-between; height: 78px; }.nav-group { display: block; min-width: 0; flex: 0 1 auto; border-left: 1px solid rgba(211, 234, 255, .14); }.nav-group-primary { padding: 3px 16px 0; color: #fff; text-align: center; }.nav-group-primary span { font-size: 26px; font-weight: 800; line-height: 1.25; }.nav-group-primary small { display: block; min-height: 28px; margin-top: 14px; color: rgba(222, 241, 255, .8); font-size: 16px; font-weight: 700; line-height: 1.6; white-space: normal; }.nav-group:hover .nav-group-primary, .nav-group:focus-within .nav-group-primary { background: transparent; }.nav-group:hover .nav-group-primary span, .nav-group:focus-within .nav-group-primary span { color: #fff; text-shadow: 0 3px 14px rgba(0, 25, 72, .45); }
+.header-action { display: none; }
+
+.hero-content { position: relative; width: min(920px, calc(100% - 48px)); margin: 0 auto; padding: 60px 0 0; text-align: center; animation: reveal 620ms ease-out both; }.hero-identification { position: relative; display: grid; grid-template-columns: 1fr; gap: 6px; color: #fff; font-size: 19px; font-weight: 800; letter-spacing: .08em; }.hero-identification::before { content: "中国石油大学（北京）"; display: block; color: #fff; font-family: "STKaiti", "KaiTi", serif; font-size: 32px; letter-spacing: .15em; }.hero-identification > span { display: none; }.hero-identification { font-size: 0; }.hero-identification small { color: #e6f5ff; font-size: 13px; letter-spacing: .11em; }
+.hero-content h1 { position: relative; margin: 29px 0 0; color: #fff; font-family: "STKaiti", "KaiTi", serif; font-size: clamp(74px, 7.4vw, 112px); font-weight: 800; letter-spacing: .22em; line-height: 1; text-shadow: 0 6px 20px rgba(0, 24, 68, .28); }.hero-content h1::before, .hero-content h1::after { content: ""; position: absolute; top: 50%; width: 115px; height: 70px; border: 8px dotted rgba(211, 241, 255, .5); border-color: rgba(211, 241, 255, .55) transparent transparent transparent; border-radius: 50%; transform: translateY(-50%) rotate(45deg); }.hero-content h1::before { left: 6%; }.hero-content h1::after { right: 6%; transform: translateY(-50%) rotate(-135deg); }.hero-subtitle { margin: 16px 0 84px; color: #fff; font-size: clamp(27px, 3vw, 44px); font-weight: 900; letter-spacing: .03em; text-shadow: 0 4px 13px rgba(0, 29, 75, .32); }
+.ai-center-entry { left: 6.2vw; bottom: 40px; padding: 18px 24px; color: #fff; background: rgba(34, 83, 139, .75); border: 1px solid rgba(225, 246, 255, .3); border-radius: 34px; box-shadow: 0 12px 28px rgba(0, 20, 60, .2); font-size: 18px; font-weight: 800; }.ai-center-entry:hover { color: #fff; background: rgba(51, 116, 184, .92); }.hero-stats { right: 5.4vw; bottom: 45px; display: grid; gap: 24px; text-align: center; }.hero-stats div { gap: 3px; }.hero-stats span { color: #fff; font-family: Georgia, serif; font-size: 32px; font-style: italic; font-weight: 800; }.hero-stats strong { color: rgba(225, 244, 255, .75); font-size: 16px; font-weight: 700; }
+
+@media (max-width: 1120px) { .site-header { height: 136px; padding-top: 32px; }.brand-school { font-size: 16px; }.main-nav { height: 64px; }.nav-group-primary span { font-size: 18px; }.nav-group-primary small { margin-top: 8px; font-size: 11px; }.hero-content { padding-top: 48px; }.hero-subtitle { margin-bottom: 54px; }.hero-content h1::before, .hero-content h1::after { display: none; } }
+@media (max-width: 760px) { .hero-shell { min-height: 780px; }.hero-shell::before { top: 80px; right: -30vw; width: 100vw; height: 100vw; }.site-header { height: 72px; align-items: center; padding: 0 18px; background: rgba(0, 49, 116, .46); }.brand { height: auto; padding: 0; border: 0; }.brand-school, .home-nav, .main-nav { display: none; }.brand-university-logo { height: 30px; }.brand-mark { width: 32px; height: 32px; }.brand-product { display: inline; color: #fff; font-size: 18px; }.mobile-menu-toggle { color: #fff; border-color: rgba(222, 244, 255, .66); }.mobile-navigation { top: 72px; background: rgba(4, 65, 136, .98); border-bottom-color: rgba(222, 244, 255, .25); box-shadow: 0 18px 32px rgba(0, 13, 30, .3); }.mobile-navigation strong, .mobile-navigation button { color: #e9f7ff; }.mobile-navigation section { border-bottom-color: rgba(226, 240, 240, .16); }.hero-content { width: min(100% - 28px, 920px); padding-top: 74px; }.hero-identification::before { font-size: 21px; }.hero-identification small { font-size: 8px; }.hero-content h1 { margin-top: 21px; font-size: 62px; }.hero-subtitle { margin: 11px 0 42px; font-size: 23px; }.ai-center-entry { left: 18px; bottom: 20px; padding: 12px 15px; font-size: 13px; }.hero-stats { right: 18px; bottom: 20px; gap: 11px; }.hero-stats span { font-size: 17px; }.hero-stats strong { font-size: 9px; } }
+
+/* Reference-aligned homepage refinements. Geological imagery remains original to this platform. */
+.hero-shell {
+  min-height: 100svh;
+  background:
+    linear-gradient(90deg, rgba(3, 41, 94, .84), rgba(9, 100, 184, .49) 48%, rgba(3, 47, 105, .82)),
+    radial-gradient(ellipse 38% 68% at 52% 57%, rgba(85, 170, 228, .24), transparent 72%),
+    linear-gradient(132deg, #0754a1 0%, #0878bf 49%, #03447e 100%);
+}
+.hero-shell::before { top: 156px; right: 14%; width: 51vw; height: 51vw; opacity: .68; }
+.hero-shell::after { background: linear-gradient(180deg, transparent 44%, rgba(1, 25, 69, .25)); }
+.strata { opacity: .19; }.strata-a { bottom: 33px; }.strata-b { bottom: 22%; }.topographic-lines { opacity: .42; }
+.site-header { background: rgba(0, 77, 160, .22); }
+.hero-content { width: min(886px, calc(100% - 48px)); padding-top: 59px; }
+.hero-content h1::before, .hero-content h1::after { display: none; }
+.hero-content h1 { font-weight: 700; letter-spacing: .17em; }
+.hero-subtitle { margin-bottom: 77px; }
+.ai-center-entry { min-width: 224px; height: 68px; justify-content: center; padding: 0 24px; border-radius: 34px; }
+.hero-stats { min-width: 156px; right: 4.4vw; }
+.assistant-note { display: none; }
+
+@media (max-width: 760px) {
+  .hero-shell { min-height: 850px; }
+  .hero-content { padding-top: 74px; }
+  .hero-subtitle { margin-bottom: 42px; }
+  .ai-center-entry { left: 18px; min-width: 0; height: auto; transform: none; }
+  .assistant-note { display: none; }
+}
+
+/* Zhihuishu reference geometry: open state and compact scroll state. */
+.hero-shell {
+  min-height: 1000px;
+  background: #0755a8;
+}
+.hero-shell::before,
+.hero-shell::after,
+.strata,
+.topographic-lines { display: none; }
+
+.site-header {
+  position: relative;
+  height: 180px;
+  align-items: center;
+  padding: 0 4.1vw;
+  /* Transparent at rest: the header sits inside .hero-shell, so the animated scene runs up behind the
+     navigation and the two read as one surface — the solid #1b5fa7 band this used to carry was the
+     visible seam between nav and hero. Once the page moves, .is-condensed grows its own glass. */
+  background: transparent;
+  border: 0;
+}
+.site-header:not(.is-condensed) .home-nav,
+.site-header:not(.is-condensed) .main-nav,
+.site-header:not(.is-condensed) .header-action { display: none; }
+.site-header:not(.is-condensed) .brand { height: auto; padding: 0; border: 0; }
+.site-header:not(.is-condensed) .brand-mark { width: 38px; height: 38px; background: transparent; border: 0; }
+.site-header:not(.is-condensed) .brand-school { font-size: 20px; }
+.site-header:not(.is-condensed) .brand-divider { display: block; }
+.site-header:not(.is-condensed) .brand-product { display: inline; color: #fff; font-size: 20px; }
+.site-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-left: auto;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  font-size: 18px;
+}
+/* .profile-avatar and `.site-profile svg` used to be declared here, for the hard-coded 访客 chip. They are
+   gone with it, and deliberately: both were *global* rules, so they reached inside the AccountEntry
+   component — the svg rule would have drawn a 23px ring around the 登录 icon. The chip's own appearance now
+   lives in that component, where scoping keeps it from leaking onto whatever else sits in a header. */
+
+.hero-content { width: min(886px, calc(100% - 48px)); padding-top: 68px; }
+.hero-content h1 {
+  margin: 29px 0 0;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 88px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-shadow: none;
+}
+.hero-subtitle { margin: 14px 0 90px; font-size: 42px; letter-spacing: 0; }
+.hero-laurel { position: absolute; top: 112px; width: 115px; height: 180px; opacity: .43; }
+.hero-laurel::before { content: ""; position: absolute; inset: 14px 46px; border-left: 6px solid rgba(185, 224, 251, .95); border-radius: 50%; transform: rotate(-28deg); }
+.hero-laurel::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 11px 23px at 48% 10%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 33% 24%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 27% 41%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 32% 58%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 43% 74%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 67% 29%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 73% 47%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 66% 65%, #a9d7f4 0 60%, transparent 64%); }
+.hero-laurel-left { left: -49px; transform: rotate(-17deg); }.hero-laurel-right { right: -49px; transform: scaleX(-1) rotate(-17deg); }
+
+.ai-center-entry { bottom: 103px; min-width: 224px; height: 70px; background: rgba(34, 112, 194, .68); border-color: rgba(202, 232, 255, .32); box-shadow: none; }
+.hero-stats { right: 4.5vw; bottom: 136px; gap: 23px; }.hero-stats span { font-size: 33px; }.hero-stats strong { font-size: 16px; }
+
+.site-header.is-condensed {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  height: 124px;
+  align-items: flex-start;
+  padding: 47px 4.1vw 0;
+  background: rgba(18, 88, 158, .93);
+  box-shadow: 0 10px 19px rgba(7, 44, 82, .23);
+}
+.hero-shell:has(.site-header.is-condensed) { z-index: 30; padding-top: 180px; overflow: visible; }
+.site-header.is-condensed .brand { height: 61px; padding-right: 31px; border-right: 1px solid rgba(255,255,255,.18); }
+.site-header.is-condensed .brand-mark { width: 38px; height: 38px; background: transparent; border: 0; }.site-header.is-condensed .brand-school { font-size: 20px; }.site-header.is-condensed .brand-divider { display: block; }.site-header.is-condensed .brand-product { display: inline; color: #fff; font-size: 20px; }.site-header.is-condensed .home-nav { height: 61px; margin: 0 20px; padding: 8px 12px; color: #fff; font-size: 20px; }.site-header.is-condensed .main-nav { height: 72px; }.site-header.is-condensed .nav-group-primary { padding-top: 1px; }.site-header.is-condensed .nav-group-primary span { font-size: 25px; }.site-header.is-condensed .nav-group-primary small { margin-top: 12px; font-size: 15px; }.site-header.is-condensed .site-profile { height: 61px; }
+
+@media (max-width: 1120px) {
+  .site-header:not(.is-condensed) { height: 136px; }
+  .hero-content { padding-top: 104px; }
+  .hero-content h1 { font-size: 73px; }
+  .hero-subtitle { margin-bottom: 59px; font-size: 32px; }
+  .hero-laurel { display: none; }
+  .site-header.is-condensed .nav-group-primary span { font-size: 18px; }
+  .site-header.is-condensed .nav-group-primary small { font-size: 11px; }
+}
+/* A "micro header" block used to sit here: a 38px header carrying a 4px school name and 7px nav
+   titles (with the desktop nav forced to display) plus a 190px-wide hero whose smallest text was
+   3px. Its selectors held an extra class, so they outranked the two `@media (max-width: 760px)`
+   blocks above that hide the desktop nav — the nav therefore stayed visible at 7px, which renders
+   Chinese as an unreadable smear, while the hamburger menu was suppressed at the same time.
+   It was removed as a whole (header and hero sizes were one design), letting the mobile blocks
+   above take over: 72px header, product name only, desktop nav hidden, hamburger shown, and the
+   existing `padding-top: 74px` already matches that 72px header. */
+
+/* The reference header scales its hierarchy with the viewport instead of clipping tier labels. */
+@media (min-width: 761px) {
+  .site-header.is-condensed .nav-group-primary span { font-size: clamp(18px, 1.3vw, 25px); }
+  .site-header.is-condensed .nav-group-primary small { font-size: clamp(11px, .78vw, 15px); }
+  .site-header.is-condensed .nav-group-primary { padding-right: clamp(7px, .8vw, 16px); padding-left: clamp(7px, .8vw, 16px); }
+}
+
+/* The homepage atlas and its dedicated destinations share one portal surface. */
+.layer-page .layer-content {
+  width: min(87.5vw, 1680px);
+  margin: 0 auto;
+}
+
+.layer-page .resource-catalog,
+.layer-page .knowledge-graph,
+.layer-page .geo-data,
+.layer-page .learning-tasks,
+.layer-page .well-log-lab {
+  min-height: 560px;
+  padding-top: 76px;
+  padding-bottom: 94px;
+}
+
+.layer-page .resource-catalog h2,
+.layer-page .knowledge-graph h2,
+.layer-page .geo-data h2,
+.layer-page .learning-tasks h2,
+.layer-page .well-log-lab h2 {
+  color: #173f67;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.layer-page .catalog-grid,
+.layer-page .map-workspace,
+.layer-page .graph-canvas,
+.layer-page .lab-workspace {
+  border-color: #c8dfef;
+}
+
+.layer-page .catalog-grid article,
+.layer-page .map-inspector,
+.layer-page .lab-workspace,
+.layer-page .graph-canvas {
+  background: #f7fbff;
+}
+
+.layer-page .catalog-grid article {
+  border-color: #d7e8f3;
+}
+
+.layer-page .resource-catalog nav {
+  border-bottom-color: #c8dfef;
+}
+
+.layer-page .map-reset,
+.layer-page .reset-button {
+  color: #0768b4;
+  border-color: #a9d1e9;
+}
+
+@media (max-width: 760px) {
+  .layer-page .layer-content { width: min(100% - 30px, 1680px); }
+  .layer-page .resource-catalog,
+  .layer-page .knowledge-graph,
+  .layer-page .geo-data,
+  .layer-page .learning-tasks,
+  .layer-page .well-log-lab { min-height: auto; padding-top: 48px; padding-bottom: 64px; }
+}
+
+/* The reference homepage exposes the full course hierarchy before scrolling. */
+@media (min-width: 761px) {
+  .site-header:not(.is-condensed) {
+    align-items: flex-start;
+    padding: 47px 4.1vw 0;
+  }
+  .site-header:not(.is-condensed) .brand {
+    height: 61px;
+    padding-right: 31px;
+    border-right: 1px solid rgba(255,255,255,.18);
+  }
+  .site-header:not(.is-condensed) .home-nav,
+  .site-header:not(.is-condensed) .main-nav { display: inline-flex; }
+  .site-header:not(.is-condensed) .main-nav { display: flex; }
+  .site-header:not(.is-condensed) .nav-group-primary { padding-top: 1px; }
+  .site-header:not(.is-condensed) .nav-group-primary span { font-size: clamp(18px, 1.3vw, 25px); }
+  .site-header:not(.is-condensed) .nav-group-primary small { margin-top: 12px; font-size: clamp(11px, .78vw, 15px); }
+}
+
+/* The hero scene is drawn, not photographed: a static Unsplash image used to sit here, which both read
+   as a pasted-in photo behind a solid nav band and never moved. The scene is now layered CSS — brand
+   gradient base, two drifting light blobs, a breathing contour ring and a deep-earth stratigraphic
+   cross-section — and the header is transparent at rest so the same scene runs behind the navigation
+   with no seam (the condensed state still grows its own glass surface once the page moves). Every
+   layer animates transform/opacity only, and all of it switches off under prefers-reduced-motion. The
+   decorative layers were display:none by the "Zhihuishu reference geometry" block above; this block
+   re-arms the ones it needs with their earlier geometry and puts each one in slow motion. The old
+   .strata streaks stay hidden — the dedicated cross-section below replaces them. */
+.hero-shell {
+  background:
+    radial-gradient(ellipse 38% 68% at 52% 57%, rgba(85, 170, 228, .2), transparent 72%),
+    linear-gradient(132deg, #0754a1 0%, #0878bf 49%, #03447e 100%);
+}
+.hero-shell::before,
+.hero-shell::after { display: block; }
+.hero-shell::before { animation: hero-ring-breathe 18s ease-in-out infinite alternate; }
+.topographic-lines { display: block; opacity: .5; animation: hero-topo-breathe 22s ease-in-out infinite alternate; }
+.hero-aurora { position: absolute; z-index: -2; pointer-events: none; border-radius: 50%; }
+.aurora-west {
+  top: -16%; left: -10%; width: 54vw; height: 54vw;
+  background: radial-gradient(closest-side, rgba(126, 205, 255, .3), rgba(126, 205, 255, 0) 74%);
+  animation: hero-aurora-drift 21s ease-in-out infinite alternate;
+}
+.aurora-east {
+  bottom: -24%; right: -12%; width: 62vw; height: 62vw;
+  background: radial-gradient(closest-side, rgba(64, 158, 232, .26), rgba(64, 158, 232, 0) 76%);
+  animation: hero-aurora-drift 27s ease-in-out infinite alternate-reverse;
+}
+/* 深部地层剖面：四条层界带自下而上堆叠——层界面（border-top 亮线 + 往复扫光）清晰可辨、
+   随深度加深变暗，层内叠细密沉积层理纹理（::before）。各以 12/16/20/26s 错拍缓移、相邻层
+   倾向相反；层界扫光（::after）以 8-17s 沿界面掠过，给出"活动剖面"的直接观感。
+   读作"深地"的层序剖面（向下分层的地下结构），而不是地表山川；z-index -1 压在等高线环
+   之上、所有内容之下。每层的倾角写进各自的关键帧：transform 是整体替换，动画期间静态
+   rotate 会被覆盖（山峦版踩过的坑）。首版填充色贴背景渐变、36-74s 慢到肉眼不可感——
+   用户反馈"看不到"，故提对比、提纹理、提速。 */
+.geo-stratum {
+  position: absolute; z-index: -1; left: -8vw; right: -8vw; pointer-events: none;
+  border-top: 2px solid rgba(190, 226, 255, .7);
+  box-shadow: 0 -8px 22px rgba(150, 210, 255, .25);
+}
+.geo-stratum::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(180deg, rgba(210, 235, 255, .09) 0 2px, transparent 2px 16px);
+}
+.geo-stratum::after {
+  content: ''; position: absolute; top: -2px; left: 0; width: 42%; height: 2.5px;
+  background: linear-gradient(90deg, transparent, rgba(228, 246, 255, .98), transparent);
+  animation: stratum-shimmer 9s ease-in-out infinite;
+}
+.stratum-d1 {
+  bottom: 24vh; height: 11vh;
+  background: linear-gradient(180deg, rgba(24, 96, 160, .5), rgba(10, 60, 116, .62));
+  animation: hero-stratum-drift-1 7s ease-in-out infinite alternate;
+}
+.stratum-d1::after { animation-duration: 5.5s; animation-delay: -1.5s; }
+.stratum-d2 {
+  bottom: 16vh; height: 11vh;
+  background: linear-gradient(180deg, rgba(14, 72, 132, .55), rgba(5, 42, 92, .68));
+  animation: hero-stratum-drift-2 9.5s ease-in-out infinite alternate-reverse;
+}
+.stratum-d2::after { animation-duration: 7s; animation-delay: -4s; }
+.stratum-d3 {
+  bottom: 8.5vh; height: 10.5vh;
+  background: linear-gradient(180deg, rgba(8, 50, 104, .6), rgba(3, 30, 72, .72));
+  animation: hero-stratum-drift-3 12s ease-in-out infinite alternate;
+}
+.stratum-d3::after { animation-duration: 8.5s; animation-delay: -2.5s; }
+.stratum-d4 {
+  bottom: 1.5vh; height: 9.5vh;
+  background: linear-gradient(180deg, rgba(4, 34, 80, .66), rgba(2, 20, 54, .78));
+  animation: hero-stratum-drift-4 15s ease-in-out infinite alternate-reverse;
+}
+.stratum-d4::after { animation-duration: 10s; animation-delay: -6s; }
+/* 高感知动效层 1 —— 全幅斜向扫光带：一道宽光带每 10s 无停顿掠过整个 hero（linear 循环，
+   两端点都在画面外所以循环无跳变），transform-only；z-index -1 压在地层之上、内容之下。
+   缓移+层界扫光对巨幅渐变带感知太弱（用户两轮反馈"看不到动态特效"），这道全幅扫光是
+   一眼可见的运动主体。 */
+.hero-scan {
+  position: absolute; z-index: -1; inset: -10% -30%; pointer-events: none;
+  background: linear-gradient(105deg, transparent 42%, rgba(190, 232, 255, .24) 50%, rgba(190, 232, 255, .08) 55%, transparent 63%);
+  animation: hero-scan-sweep 10s linear infinite;
+  will-change: transform;
+}
+@keyframes hero-scan-sweep {
+  from { transform: translateX(-55%); }
+  to { transform: translateX(55%); }
+}
+/* 高感知动效层 2 —— 悬浮微粒：3px 亮点（box-shadow 散布在 hero 下三分之二，即地层带
+   附近），两层方向/时长/相位错开缓慢浮游，读作地层间的沉积颗粒。 */
+.geo-motes { position: absolute; z-index: -1; left: 0; top: 0; width: 3px; height: 3px; border-radius: 50%; pointer-events: none; }
+.motes-a {
+  box-shadow:
+    6vw 34vh 0 1px rgba(220, 242, 255, .65), 14vw 55vh 0 0 rgba(214, 240, 255, .45),
+    23vw 72vh 0 1px rgba(220, 242, 255, .55), 31vw 44vh 0 0 rgba(214, 240, 255, .42),
+    39vw 63vh 0 1px rgba(220, 242, 255, .6), 47vw 80vh 0 0 rgba(214, 240, 255, .44),
+    55vw 38vh 0 1px rgba(220, 242, 255, .58), 63vw 58vh 0 0 rgba(214, 240, 255, .46),
+    71vw 74vh 0 1px rgba(220, 242, 255, .58), 79vw 47vh 0 0 rgba(214, 240, 255, .42),
+    87vw 66vh 0 1px rgba(220, 242, 255, .55), 93vw 52vh 0 0 rgba(214, 240, 255, .44),
+    18vw 88vh 0 1px rgba(220, 242, 255, .5), 68vw 86vh 0 0 rgba(214, 240, 255, .4);
+  animation: motes-float-a 11s ease-in-out infinite alternate;
+}
+.motes-b {
+  box-shadow:
+    10vw 47vh 0 0 rgba(200, 230, 255, .5), 20vw 64vh 0 1px rgba(200, 230, 255, .56),
+    28vw 40vh 0 0 rgba(200, 230, 255, .42), 36vw 76vh 0 1px rgba(200, 230, 255, .52),
+    44vw 52vh 0 0 rgba(200, 230, 255, .46), 52vw 70vh 0 1px rgba(200, 230, 255, .58),
+    60vw 42vh 0 0 rgba(200, 230, 255, .44), 69vw 60vh 0 1px rgba(200, 230, 255, .54),
+    77vw 82vh 0 0 rgba(200, 230, 255, .42), 85vw 56vh 0 1px rgba(200, 230, 255, .5),
+    92vw 74vh 0 0 rgba(200, 230, 255, .44), 33vw 88vh 0 1px rgba(200, 230, 255, .48);
+  animation: motes-float-b 14s ease-in-out infinite alternate-reverse;
+}
+@keyframes motes-float-a {
+  from { transform: translate3d(-1.4vw, 1.6vh, 0); }
+  to { transform: translate3d(1.4vw, -1.6vh, 0); }
+}
+@keyframes motes-float-b {
+  from { transform: translate3d(1.1vw, -1.3vh, 0); }
+  to { transform: translate3d(-1.1vw, 1.7vh, 0); }
+}
+@keyframes hero-aurora-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(4vw, 4vh, 0) scale(1.14); }
+}
+/* 每条层界的倾角写进各自的关键帧（transform 整体替换，静态 rotate 会被动画覆盖） */
+@keyframes hero-stratum-drift-1 {
+  from { transform: rotate(-2.2deg) translateX(-4vw); }
+  to { transform: rotate(-2.2deg) translateX(4vw); }
+}
+@keyframes hero-stratum-drift-2 {
+  from { transform: rotate(1.8deg) translateX(4vw); }
+  to { transform: rotate(1.8deg) translateX(-4vw); }
+}
+@keyframes hero-stratum-drift-3 {
+  from { transform: rotate(-1.6deg) translateX(-3.2vw); }
+  to { transform: rotate(-1.6deg) translateX(3.2vw); }
+}
+@keyframes hero-stratum-drift-4 {
+  from { transform: rotate(2.4deg) translateX(2.8vw); }
+  to { transform: rotate(2.4deg) translateX(-2.8vw); }
+}
+/* 层界扫光：亮锋沿界面从左掠到右后淡出重来，各层时长/相位错开 */
+@keyframes stratum-shimmer {
+  0% { transform: translateX(-60%); opacity: 0; }
+  18% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { transform: translateX(330%); opacity: 0; }
+}
+@keyframes hero-ring-breathe {
+  from { transform: scale(1); opacity: .55; }
+  to { transform: scale(1.06); opacity: .8; }
+}
+@keyframes hero-topo-breathe {
+  from { transform: scale(1); opacity: .38; }
+  to { transform: scale(1.05); opacity: .6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-shell::before, .topographic-lines, .hero-aurora, .geo-stratum, .hero-scan, .geo-motes { animation: none; }
+  .geo-stratum::after { animation: none; opacity: 0; }
+}
+
+
+.portal-page-enter-active,
+.portal-page-leave-active { transition: opacity 180ms ease, transform 180ms ease; }
+.portal-page-enter-from { opacity: 0; transform: translateY(8px); }
+.portal-page-leave-to { opacity: 0; transform: translateY(-5px); }
+
+@media (min-width: 761px) {
+  .site-header.is-condensed {
+    background: rgba(17, 86, 154, .86);
+    border-bottom-color: rgba(226, 239, 255, .16);
+    box-shadow: 0 10px 24px rgba(6, 34, 66, .2);
+    backdrop-filter: blur(16px);
+  }
+}
+
+/* The reference exposes every secondary destination in the header itself. */
+@media (min-width: 761px) {
+  .nav-group { display: grid; grid-template-rows: 36px auto; align-content: start; }
+  /* Last-resort safety net. The breakpoints further down already drop labels before the row gets
+     tight, so in practice this never engages; it exists so that if a group is ever pushed past its
+     box (an unusual font fallback, a much longer label), the overflow is cut off — scrollbar hidden —
+     instead of letting one group's text land on top of its neighbour's.
+     Do NOT set `justify-content` here: the `.main-nav` rule earlier in this file already uses
+     `space-between`, which pins the first group to the nav's left edge. `safe center` looks like a
+     safer choice but only degrades to `start` WHILE overflowing — the rest of the time it centres
+     the row, which opened a 98px blank between the brand and 深地智学 at 1920px (385px at 2560px).
+     `space-between` already satisfies the overflow requirement: content starts at the left edge and
+     spills to the right, where the clip above catches it.
+     `clip` not `auto`: an overflow-x of auto/scroll/hidden forces overflow-y to auto too, and the nav
+     then CLIPPED the hover dropdown hanging below the group (computed styles all correct, pixels cut
+     at the nav's bottom edge). `clip` keeps the non-overlap guarantee while leaving overflow-y
+     visible, so the panel can escape vertically. */
+  .main-nav { overflow-x: clip; overflow-y: visible; scrollbar-width: none; }
+  .main-nav::-webkit-scrollbar { display: none; }
+  .nav-group-primary { padding: 0 12px; }
+  /* The expanded header used a flat 26px title, which is what pushed the groups over the edge
+     first; scale it with the viewport exactly like the condensed header does. */
+  .site-header:not(.is-condensed) .nav-group-primary span { font-size: clamp(16px, 1.35vw, 26px); }
+  /* Compacted on purpose: at the previous metrics (15px labels / 16px gap / 14px side padding) five
+     groups of three labels needed a 1803px viewport before they stopped overflowing, so a 1920px
+     screen had only 41px of slack. These values push that edge out to 1516px, which is what lets
+     every group keep all three labels on a normal desktop instead of falling back to two. */
+  .nav-inline-links { display: flex; align-items: start; justify-content: center; gap: clamp(7px, .62vw, 12px); padding: 8px 10px 0; }
+  .nav-inline-links button { padding: 0; color: rgba(222, 241, 255, .8); background: transparent; border: 0; font-size: clamp(11px, .72vw, 14px); font-weight: 700; line-height: 1.55; white-space: nowrap; transition: color 180ms ease, transform 180ms ease; }
+  .nav-inline-links button:hover, .nav-inline-links button:focus-visible { color: #fff; outline: 0; transform: translateY(-1px); }
+  .site-header.is-condensed .nav-group-primary { padding-top: 0; }
+}
+@media (max-width: 760px) {
+  .nav-inline-links { display: flex; justify-content: center; gap: 3px; padding-top: 1px; }
+  .nav-inline-links button { padding: 0; color: rgba(231, 245, 255, .82); background: transparent; border: 0; font-size: 3px; line-height: 1.25; white-space: nowrap; }
+}
+
+/* Homepage deck — every module owns exactly one screen (PPT-style paging). */
+/* overflow-x hidden: the strata decorations intentionally bleed 8vw past both edges; without the clip
+   the whole deck pans sideways on phones (~80px), which read as a broken layout. */
+.deck { position: relative; height: 100svh; overflow-y: scroll; overflow-x: hidden; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+.deck > .deck-slide { min-height: 100svh; scroll-snap-align: start; }
+.deck > .site-footer { scroll-snap-align: end; }
+
+/* Slide 1 — 智慧问答: brand wordmark + assistant landing. */
+.deck .hero-shell { min-height: 100svh; }
+.deck .hero-content { padding-top: 34px; padding-bottom: 28px; }
+.deck .hero-content h1 { font-size: 74px; }
+.deck .hero-subtitle { margin: 10px 0 18px; font-size: 30px; }
+.deck .hero-stats { bottom: 96px; }
+.deck .hero-stats span { font-size: 26px; }
+.deck .deck-scroll-hint { bottom: 18px; }
+
+/* Slides 2-3 — the condensed header is fixed at 124px, so every atlas slide reserves room for it.
+   The scoped SFC rules carry an attribute selector, hence the deep selectors below.
+   `grid-template-columns` is not decoration. This slide is a grid, and without it the track is
+   implicit `auto`, which is sized to the item's MAX-CONTENT first — so the shells' own
+   `width: calc(100% - 24px)` (the mobile rule) resolved against a max-content track and froze the
+   course shell at 650px wide no matter how narrow the phone was (650 at 360px, 650 at 640px), which
+   pushed it up to 302px off-screen and made the whole deck scroll sideways. `minmax(0, 1fr)` makes
+   the track a definite fraction of the slide, which cannot be pushed wider by content, so the
+   percentage resolves against something real. */
+.deck > .deck-slide.atlas-page { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; padding: 136px 0 16px; }
+.deck > .deck-slide.atlas-page .atlas-shell,
+.deck > .deck-slide.atlas-page .ability-stage { margin-top: 0; }
+.deck > .deck-slide.atlas-page .atlas-shell { padding: 32px 60px 40px; }
+.deck > .deck-slide.atlas-page .ability-stage { margin-bottom: 0; padding: 28px 60px 22px; }
+.deck > .deck-slide.atlas-page .ability-panel { margin-top: 20px; padding: 18px 26px 14px; }
+.deck > .deck-slide.atlas-page .ability-legend { margin-top: 12px; padding-top: 10px; }
+.deck > .deck-slide.atlas-page .ability-tabs { margin-bottom: 16px; }
+/* Reserve the slide padding plus the card chrome, so shorter windows stay one screen.
+   The wrap is a fixed viewport; the graph inside is scaled by the zoom controls. */
+.deck > .deck-slide.atlas-page .ability-graph-wrap { height: clamp(160px, calc(100svh - 438px), 460px); }
+.deck > .deck-slide.atlas-page .course-card { min-height: clamp(200px, calc(100svh - 545px), 343px); }
+
+@media (max-width: 900px) {
+  .deck { scroll-snap-type: y proximity; }
+  .deck > .deck-slide { min-height: auto; }
+  /* ...except the hero screen. It is laid out around a full viewport: .hero-stats (bottom: 96px) and
+     .deck-scroll-hint are absolutely positioned against the slide's bottom edge, so letting the slide
+     shrink to its content height — 309px at 390px wide — drags both of them up on top of the headline
+     (stats overlapped h1 at 390 and 760) and of the prompt box (hint overlapped the assistant panel).
+     The atlas screens are content-sized on purpose; this one is not. */
+  .deck > .deck-slide.hero-shell { min-height: 100svh; }
+  .deck > .deck-slide.atlas-page { padding: 108px 0 24px; }
+  .deck > .deck-slide.atlas-page .ability-graph-wrap { height: clamp(240px, 44svh, 380px); }
+}
+
+/* Phones only (<=760, not the whole <=900 band): `.deck .hero-content h1` is 74px at (0,3,0) and lands on
+   phones too, where 深地智学 then wraps onto two lines at 390px (148px tall) — the short-window block that
+   used to mask this is desktop-only now. Declared after that rule, so at equal specificity this wins.
+   761-900px keeps the 74px title on purpose: an 834px tablet has room for it, and 52px reads as timid. */
+@media (max-width: 760px) {
+  .deck .hero-content h1 { margin-top: 14px; font-size: 52px; }
+}
+
+/* Short DESKTOP windows (e.g. a 1366x768 laptop): tighten the hero so it still fits one screen.
+   The `min-width: 901px` is not decoration. 844 < 870, so a 390x844 phone matched this block too, and its
+   hero was decided by *window height* rather than by the width blocks below — a 430x932 phone (932 > 870)
+   did not match, so two phones rendered a different header and a different title size. Everything in here
+   (hiding the school identification, h1 down to 52px) is a desktop-only compromise; phones get their own
+   values from the max-width blocks. */
+@media (max-height: 870px) and (min-width: 901px) {
+  .deck .hero-shell:has(.site-header.is-condensed) { padding-top: 132px; }
+  .deck .hero-identification { display: none; }
+  .deck .hero-content { padding-top: 16px; padding-bottom: 14px; }
+  .deck .hero-content h1 { margin-top: 14px; font-size: 52px; }
+  .deck .hero-subtitle { margin: 6px 0 10px; font-size: 22px; }
+  .deck .deck-scroll-hint { bottom: 10px; padding: 7px 14px; font-size: 12px; }
+}
+
+/* `.deck .qa-stage .ai-center-entry { height: 40px; … }` used to sit in the block above. It stopped
+   matching the moment the corner entry moved out of `.qa-stage` and became a child of <main> — and that
+   is the only reason it was harmless, because at (0,3,0) it would have outranked the component's own
+   scoped rule. Left here as a note so nobody re-adds a three-class override for that button. */
+
+/* 深地智学 is the first nav group's title on desktop, so the brand keeps only the school name
+   next to its mark. Mobile (<=760px) still needs the product name, because the school name is
+   hidden there and the brand would otherwise be an empty mark. */
+@media (min-width: 761px) {
+  .site-header .brand .brand-product,
+  .site-header .brand .brand-divider { display: none; }
+}
+
+/* Five nav groups carrying three labels each do not fit every window, so the header degrades in
+   SYMMETRIC steps: at any given width every group loses the same labels. An earlier pass instead hid
+   only the first group's labels, which failed twice over — the header looked lopsided (one empty
+   group beside four full ones) and its usable band was barely 60px wide before it overflowed.
+   The bands below were solved with an injection probe that toggled the label count through inline
+   styles, then confirmed at 22 viewports. Each one keeps >=40px of slack at its narrowest point:
+     >=1540px  three labels per group  (1920px: 200px slack; the old metrics gave 41px here)
+     >=1360px  two labels per group
+     >=1100px  group titles only
+     <1100px   titles only, and the brand drops the school name to keep 761px safe
+   The ladder stops at two labels on purpose: a single label measures ~17px against a ~102px group
+   title, so "one label" occupies exactly the same width as "no labels" and would be a no-op step.
+   A group that still cannot fit is caught by the nav's own horizontal scroll, so nothing overlaps.
+   The fixed right-hand pager still switches screens at every width. */
+@media (min-width: 761px) and (max-width: 1539px) {
+  .main-nav .nav-inline-links button:nth-child(n + 3) { display: none; }
+}
+@media (min-width: 761px) and (max-width: 1359px) {
+  .main-nav .nav-inline-links { display: none; }
+  .main-nav > .nav-group { grid-template-rows: auto; align-content: center; }
+}
+/* Mobile header height. Three parts of this file assume 72px at <=760px — the two `@media
+   (max-width: 760px)` headers set it, the dropdown is positioned at `top: 72px`, and the hero
+   reserves `padding-top: 74px` for it — but the 1120px block sets 136px through
+   `.site-header:not(.is-condensed)`, whose extra class wins regardless of the narrower query. The
+   result was a 136px header with a 72px dropdown pinned to its middle, covering the brand by 15px.
+   Restating 72px here (same specificity, later in the file) makes all three agree again. */
+@media (max-width: 760px) {
+  .site-header:not(.is-condensed),
+  .site-header.is-condensed { height: 72px; }
+}
+
+@media (min-width: 761px) and (max-width: 1099px) {
+  .site-header .brand .brand-school { display: none; }
+  .main-nav > .nav-group .nav-group-primary { padding-right: 8px; padding-left: 8px; }
+  /* Scoped to the expanded header so the condensed one keeps its own clamp(18px, 1.3vw, 25px). */
+  .site-header:not(.is-condensed) .main-nav > .nav-group .nav-group-primary span { font-size: clamp(14px, 1.6vw, 20px); }
+}

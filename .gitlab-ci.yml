@@ -1,0 +1,83 @@
+stages:
+  - verify
+  - security
+  - package
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+
+cache:
+  paths:
+    - .cache/pip
+    - .cache/npm
+
+web:build:
+  stage: verify
+  image: node:22-alpine
+  script:
+    - cd apps/web
+    - npm ci
+    - npm run build
+
+helm:lint:
+  stage: verify
+  image: alpine/helm:3.16.4
+  script:
+    - helm lint infra/helm/deep-geology
+    - helm template deep-geology infra/helm/deep-geology > rendered-manifests.yaml
+    - grep -q 'path: /api' rendered-manifests.yaml
+    - grep -q 'name: deep-geology-deep-geology-api' rendered-manifests.yaml
+  artifacts:
+    paths:
+      - rendered-manifests.yaml
+
+api:test:
+  stage: verify
+  image: python:3.12-slim
+  script:
+    - pip install --upgrade pip
+    - pip install -r apps/api/requirements-dev.txt
+    - cd apps/api
+    - python -m alembic upgrade head
+    - python -m pytest -q
+    - cd ../..
+    - python scripts/export_openapi.py
+  artifacts:
+    paths:
+      - packages/contracts/openapi.json
+
+api:dependencies:
+  stage: security
+  image: python:3.12-slim
+  script:
+    - pip install pip-audit cyclonedx-bom
+    - pip-audit -r apps/api/requirements.txt
+    - cyclonedx-py requirements apps/api/requirements.txt --output-file api-sbom.cdx.json
+  artifacts:
+    when: always
+    paths:
+      - api-sbom.cdx.json
+
+web:dependencies:
+  stage: security
+  image: node:22-alpine
+  script:
+    - cd apps/web
+    - npm ci
+    - npm audit --audit-level=high
+
+image:build:
+  stage: package
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  rules:
+    - if: '$CI_REGISTRY && $CI_REGISTRY_IMAGE'
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHA" apps/web
+    - docker build -t "$CI_REGISTRY_IMAGE/api:$CI_COMMIT_SHA" apps/api
+    - docker build -t "$CI_REGISTRY_IMAGE/worker:$CI_COMMIT_SHA" -f apps/worker/Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE/web:$CI_COMMIT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE/api:$CI_COMMIT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE/worker:$CI_COMMIT_SHA"

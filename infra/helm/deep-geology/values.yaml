@@ -1,0 +1,53 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+web:
+  replicaCount: 2
+  image:
+    repository: registry.example.edu.cn/deep-geology/web
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+
+api:
+  replicaCount: 2
+  image:
+    repository: registry.example.edu.cn/deep-geology/api
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  runtimeSecret: deep-geology-runtime
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { cpu: "1", memory: 1Gi }
+
+worker:
+  replicaCount: 1
+  image:
+    repository: registry.example.edu.cn/deep-geology/worker
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { cpu: "1", memory: 1Gi }
+
+ingress:
+  enabled: true
+  className: nginx
+  host: deep-geology.example.edu.cn
+  tlsSecretName: deep-geology-tls
+
+autoscaling:
+  api:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+
+# The existing Secret must contain DATABASE_URL, REDIS_URL,
+# OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_ACCESS_KEY,
+# OBJECT_STORAGE_SECRET_KEY, OBJECT_STORAGE_BUCKET, OIDC_ISSUER,
+# OIDC_AUDIENCE, OIDC_JWKS_URL and OIDC_ROLE_CLAIM.

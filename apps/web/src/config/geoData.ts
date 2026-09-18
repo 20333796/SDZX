@@ -1,0 +1,246 @@
+// 地学数据目录的类型、分类文案与离线兜底数据。
+// 与 apps/api/app/data_geo.py 的种子内容保持一致：API 可用时以 /api/v1/geo-data 为准，
+// 仅在请求失败时使用这里的数据渲染，保证页面不因后端缺席而空白。
+
+export type GeoFeature = {
+  name: string
+  lon: number
+  lat: number
+  value?: string | null
+  note?: string | null
+}
+
+export type GeoDatasetItem = {
+  id: string
+  title: string
+  category: string
+  region: string
+  description: string
+  data_format: string
+  resolution: string
+  size_label: string
+  source: string
+  license: string
+  access_url: string | null
+  sort_order: number
+  feature_count: number
+  features?: GeoFeature[]
+}
+
+export const GEO_CATEGORY_LABELS: Record<string, string> = {
+  geology: '地质图与露头',
+  borehole: '钻孔',
+  logging: '测井',
+  seismic: '地震勘探',
+  geochemistry: '地球化学',
+  remote_sensing: '遥感',
+  terrain: '地形地貌',
+  potential_field: '重磁异常',
+}
+
+export const GEO_CATEGORY_ICONS: Record<string, unknown> = {}
+
+export const FALLBACK_GEO_DATASETS: GeoDatasetItem[] = [
+  {
+    id: 'songliao-borehole-wells',
+    title: '松辽盆地公开钻孔位置目录',
+    category: 'borehole',
+    region: '松辽盆地',
+    description: '整理松辽盆地主要公开科探井与教学参考井的地面位置，用于沉积序列与地层层序教学。',
+    data_format: 'CSV 点表',
+    resolution: '井位精度 ±100 m',
+    size_label: '42 口井',
+    source: '公开科探成果汇编',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 10,
+    feature_count: 4,
+    features: [
+      { name: '松科 1 井（北井）', lon: 124.3, lat: 45.6, value: '完钻井深 1915 m', note: '白垩系青山口组连续取芯' },
+      { name: '松科 2 井', lon: 124.1, lat: 44.9, value: '完钻井深 7018 m', note: '全球陆相白垩系科学钻探' },
+      { name: '松科 3 井', lon: 125.4, lat: 45.2, value: '完钻井深 3010 m', note: '嫩江组—四方台组' },
+      { name: '扶余教学参考井', lon: 124.8, lat: 44.4, value: '井深 520 m', note: '泉头组浅层教学剖面' },
+    ],
+  },
+  {
+    id: 'songliao-seismic-lines',
+    title: '松辽盆地教学地震测线索引',
+    category: 'seismic',
+    region: '松辽盆地中央坳陷',
+    description: '公开文献中引用的教学地震测线位置索引，配合层序地层讲解 T 反射层组。',
+    data_format: '测线索引表 + 剖面截图',
+    resolution: '测线位置 ±500 m',
+    size_label: '12 条测线',
+    source: '公开文献与教材附图',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 20,
+    feature_count: 3,
+    features: [
+      { name: 'SN-1601 测线', lon: 124.6, lat: 44.8, value: '长约 58 km', note: '嫩江组底界反射清晰' },
+      { name: 'SN-1288 测线', lon: 125.2, lat: 45.0, value: '长约 42 km', note: '青山口组最大湖泛面' },
+      { name: 'SN-0876 测线', lon: 123.9, lat: 44.5, value: '长约 65 km', note: '登娄库组基底隆起' },
+    ],
+  },
+  {
+    id: 'ordos-surface-geochemistry',
+    title: '鄂尔多斯盆地地表地球化学示例子集',
+    category: 'geochemistry',
+    region: '鄂尔多斯盆地东南部',
+    description: '区域化探扫面教材案例的子集，展示 As、Sb、Hg 组合异常的圈定思路。',
+    data_format: 'CSV 化探点值',
+    resolution: '采样密度 1 点 / 4 km²',
+    size_label: '380 个样点',
+    source: '区域化探公开教材数据',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 30,
+    feature_count: 3,
+    features: [
+      { name: '延安东化探组合区', lon: 109.8, lat: 36.6, value: 'As 18.4 ppm', note: '组合异常浓集中心' },
+      { name: '黄陵北采样区', lon: 109.3, lat: 35.7, value: 'Sb 2.1 ppm', note: '背景区对照点' },
+      { name: '宜君采样区', lon: 109.1, lat: 35.4, value: 'Hg 0.09 ppm', note: '异常下限验证点' },
+    ],
+  },
+  {
+    id: 'china-geological-map-500k',
+    title: '1:50 万全国地质图空间数据库（教学摘录）',
+    category: 'geology',
+    region: '全国',
+    description: '全国 1:50 万地质图数据库的教学摘录图层，用于岩性-时代读图训练。',
+    data_format: 'Shapefile',
+    resolution: '1:50 万',
+    size_label: '摘录 6 幅图幅',
+    source: '中国地质调查局公开数据',
+    license: '公开地质资料',
+    access_url: 'https://www.ngac.org.cn',
+    sort_order: 40,
+    feature_count: 4,
+    features: [
+      { name: '松辽图幅', lon: 124.5, lat: 44.8, value: 'K 白垩系', note: '陆相碎屑岩' },
+      { name: '鄂尔多斯图幅', lon: 108.9, lat: 36.2, value: 'T-J 三叠-侏罗系', note: '含煤岩系' },
+      { name: '四川盆地图幅', lon: 105.4, lat: 30.8, value: 'J 侏罗系', note: '红层' },
+      { name: '塔里木图幅', lon: 82.5, lat: 41.2, value: 'N 新近系', note: '沙漠覆盖区' },
+    ],
+  },
+  {
+    id: 'srtm-terrain-90m',
+    title: '90 m SRTM 地形地貌数据',
+    category: 'terrain',
+    region: '全国重点教学区',
+    description: 'SRTM 90 m 数字高程模型教学切片，配合地貌学与构造解译课程使用。',
+    data_format: 'GeoTIFF',
+    resolution: '90 m',
+    size_label: '18 个标准图幅',
+    source: 'NASA SRTM 公开数据',
+    license: 'CC BY 4.0',
+    access_url: 'https://earthexplorer.usgs.gov',
+    sort_order: 50,
+    feature_count: 3,
+    features: [
+      { name: '秦岭教学切片', lon: 108.2, lat: 33.9, value: '最高 3660 m', note: '南北地貌分界' },
+      { name: '黄土高原切片', lon: 109.5, lat: 36.9, value: '沟壑密度典型区', note: '第四纪黄土' },
+      { name: '长白山切片', lon: 128.1, lat: 42.0, value: '火山口湖', note: '天池破火山口' },
+    ],
+  },
+  {
+    id: 'landsat-teaching-scenes',
+    title: 'Landsat 教学遥感影像集',
+    category: 'remote_sensing',
+    region: '典型地貌/矿区示范景',
+    description: '选取岩性识别与植被-水体指数教学用的 Landsat 8/9 示范景。',
+    data_format: 'GeoTIFF（多光谱）',
+    resolution: '30 m 多光谱 / 15 m 全色',
+    size_label: '9 景',
+    source: 'USGS Landsat 公开数据',
+    license: '公有领域',
+    access_url: 'https://earthexplorer.usgs.gov',
+    sort_order: 60,
+    feature_count: 3,
+    features: [
+      { name: '柴达木盐湖景', lon: 95.3, lat: 37.1, value: 'Landsat 9', note: '水体指数教学' },
+      { name: '大同煤田景', lon: 113.2, lat: 40.1, value: 'Landsat 8', note: '矿区变化检测' },
+      { name: '张掖丹霞景', lon: 100.2, lat: 38.9, value: 'Landsat 9', note: '彩色合成练习' },
+    ],
+  },
+  {
+    id: 'bohai-potential-field',
+    title: '渤海湾盆地重磁异常教学网格',
+    category: 'potential_field',
+    region: '渤海湾盆地',
+    description: '公开空间重磁研究网格的教学子集，用于基底构造格架与布格异常解读。',
+    data_format: '网格 (xyz)',
+    resolution: '5 km × 5 km',
+    size_label: '2 幅网格',
+    source: '公开重磁研究文献附图重制',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 70,
+    feature_count: 3,
+    features: [
+      { name: '渤中凹陷中心', lon: 119.6, lat: 38.2, value: '布格异常 +12 mGal', note: '沉降中心' },
+      { name: '埕宁隆起带', lon: 118.4, lat: 38.0, value: '布格异常 -8 mGal', note: '基底隆起' },
+      { name: '辽东湾旋卷构造区', lon: 121.2, lat: 39.4, value: '磁异常梯度带', note: '走滑构造解译' },
+    ],
+  },
+  {
+    id: 'well-log-curve-library',
+    title: '公开测井曲线样本库',
+    category: 'logging',
+    region: '多个教学盆地',
+    description: '教材与公开报告中的测井曲线数字化样本，覆盖 GR/AC/RT 常规三组合。',
+    data_format: 'LAS / CSV',
+    resolution: '采样间隔 0.125 m',
+    size_label: '26 口井 / 曲线段',
+    source: '公开教材与报告数字化',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 80,
+    feature_count: 3,
+    features: [
+      { name: '大庆教学井 GR 段', lon: 124.9, lat: 45.9, value: 'GR 45-180 API', note: '砂岩-泥岩互层' },
+      { name: '长庆教学井 AC 段', lon: 107.6, lat: 37.1, value: 'AC 210-260 μs/m', note: '延长组储层' },
+      { name: '胜利教学井 RT 段', lon: 118.6, lat: 37.4, value: 'RT 2-40 Ω·m', note: '沙河街组油水层对比' },
+    ],
+  },
+  {
+    id: 'tarim-outcrop-sections',
+    title: '塔里木盆地西北缘野外露头剖面',
+    category: 'geology',
+    region: '塔里木盆地柯坪—巴楚',
+    description: '公开科考路线中的露头剖面观察点，用于碳酸盐岩台地相与不整合面教学。',
+    data_format: '剖面照片 + 描述文档',
+    resolution: '点位 ±200 m',
+    size_label: '15 条剖面',
+    source: '公开科考报告',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 90,
+    feature_count: 3,
+    features: [
+      { name: '柯坪寒武系剖面', lon: 79.1, lat: 40.5, value: '厚约 820 m', note: '台地相碳酸盐岩' },
+      { name: '巴楚志留系剖面', lon: 78.6, lat: 39.8, value: '厚约 460 m', note: '滨海相碎屑岩' },
+      { name: '一间房不整合点', lon: 78.9, lat: 40.1, value: 'O₂/O₃ 不整合', note: '加里东运动证据' },
+    ],
+  },
+  {
+    id: 'hydrogeochemistry-samples',
+    title: '水文地球化学教学水样集',
+    category: 'geochemistry',
+    region: '鄂尔多斯白垩系地下水系统',
+    description: '公开水文地质调查的水化学分析子集，配合 Piper 图与水化学演化学教学。',
+    data_format: 'CSV 水样分析',
+    resolution: '点位 ±300 m',
+    size_label: '96 个水样',
+    source: '公开水文地质调查报告',
+    license: '教学使用',
+    access_url: null,
+    sort_order: 100,
+    feature_count: 3,
+    features: [
+      { name: '环县潜水样点', lon: 107.3, lat: 36.6, value: 'HCO₃-Na 型', note: '径流区' },
+      { name: '庆阳深层水样点', lon: 107.9, lat: 35.7, value: 'Cl-Na 型', note: '滞流区高矿化度' },
+      { name: '平凉补给区样点', lon: 106.7, lat: 35.5, value: 'HCO₃-Ca 型', note: '补给区低矿化度' },
+    ],
+  },
+]

@@ -1,0 +1,110 @@
+import type { ExternalResource } from '@/types'
+
+export const fallbackResources: ExternalResource[] = [
+  {
+    id: 'petroleum-geology-ai',
+    title: '石油地质学 AI 课程',
+    provider: '雨课堂 AI 工作台',
+    category: 'courses',
+    course_level: '本科',
+    audience: '地质与石油工程专业学生',
+    credits: 4,
+    language: '中文',
+    status: 'active',
+    url: 'https://cup.yuketang.cn/ai-workspace/pro-ai-result-display/541',
+    description: '校内 AI 课程建设成果展示。',
+    sort_order: 36
+  },
+  {
+    id: 'petroleum-geology-ai-foundation',
+    title: '油矿地质学 AI 课程',
+    provider: '雨课堂 AI 工作台',
+    category: 'courses',
+    course_level: '本科',
+    audience: '地质与石油工程专业学生',
+    credits: 4,
+    language: '中文',
+    status: 'active',
+    url: 'https://cup.yuketang.cn/ai-workspace/pro-ai-result-display/402',
+    description: '校内 AI 课程建设成果展示。',
+    sort_order: 36
+  },
+  {
+    id: 'reservoir-characterization',
+    title: '储层表征与建模',
+    provider: '雨课堂研究生资源',
+    category: 'courses',
+    course_level: '研究生',
+    audience: '地质资源与地质工程研究生',
+    language: '中文',
+    status: 'active',
+    url: 'https://cup.yuketang.cn/pro/portal/resourcedetail/52953',
+    description: '储层描述、表征方法与建模资源。',
+    sort_order: 37
+  },
+  {
+    id: 'oil-gas-exploration-graduate',
+    title: 'Oil and Gas Field Exploration 研究生资源',
+    provider: '雨课堂研究生资源',
+    category: 'courses',
+    course_level: '研究生',
+    audience: '地质资源与地质工程研究生',
+    language: 'English',
+    status: 'active',
+    url: 'https://cup.yuketang.cn/pro/portal/resourcedetail/12934655',
+    description: '油气田勘探研究生课程资源。',
+    sort_order: 38
+  },
+  {
+    id: 'clastic-rock-vr',
+    title: '碎屑岩镜下观察虚拟仿真',
+    provider: '中国石油大学（北京）虚拟仿真实验平台',
+    category: 'practice',
+    course_level: '本科',
+    audience: '沉积岩石学与实验课程学生',
+    language: '中文',
+    status: 'active',
+    url: 'https://vrlab.cup.edu.cn/virexp/prepare_login?alert=true&next=http%3A%2F%2Fvrlab.cup.edu.cn%2Fvirexp%2Fproject%2Fresult%2F%21studentElectiveView%3Fid%3D4a4c410b806a73e60184757a34976c02',
+    description: '显微观察训练与碎屑岩识别实验。',
+    sort_order: 50
+  },
+  {
+    id: 'sedimentary-rock-vr',
+    title: '沉积岩多尺度鉴定虚拟仿真',
+    provider: '中国石油大学（北京）虚拟仿真实验平台',
+    category: 'practice',
+    course_level: '本科',
+    audience: '沉积岩石学与实验课程学生',
+    language: '中文',
+    status: 'active',
+    url: 'https://vrlab.cup.edu.cn/virexp/prepare_login?alert=true&next=http%3A%2F%2Fvrlab.cup.edu.cn%2Fvirexp%2Fproject%2Fresult%2F%21studentElectiveView%3Fid%3D4a4c410b87920b1c018b8f30c2132d9b',
+    description: '基于宏观与微观证据的沉积岩多尺度鉴定。',
+    sort_order: 52
+  },
+  {
+    id: 'seismic-exploration-vr',
+    title: '油气地震勘探虚拟仿真实验',
+    provider: '中国石油大学（北京）虚拟仿真实验平台',
+    category: 'practice',
+    course_level: '本科',
+    audience: '地球物理与勘探方向学生',
+    language: '中文',
+    status: 'active',
+    url: 'https://vrlab.cup.edu.cn/virexp/prepare_login?alert=true&next=http%3A%2F%2Fvrlab.cup.edu.cn%2Fvirexp%2Fproject%2Fresult%2F%21studentElectiveView%3Fid%3D4a4c410b78edec07017918c978f17752',
+    description: '油气地震勘探流程与数据解释训练。',
+    sort_order: 54
+  },
+  {
+    id: 'radioactive-logging-vr',
+    title: '放射性测井虚拟仿真实验',
+    provider: '中国石油大学（北京）虚拟仿真实验平台',
+    category: 'practice',
+    course_level: '本科',
+    audience: '地球物理测井方向学生',
+    language: '中文',
+    status: 'active',
+    url: 'https://vrlab.cup.edu.cn/virexp/prepare_login?alert=true&next=http%3A%2F%2Fvrlab.cup.edu.cn%2Fvirexp%2Fproject%2Fresult%2F%21studentElectiveView%3Fid%3D4a4c410b8ef44ebd018f802dbfe03df6',
+    description: '放射性测井原理与解释过程虚拟实验。',
+    sort_order: 56
+  }
+]
