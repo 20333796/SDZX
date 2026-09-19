@@ -30,6 +30,12 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
+      /* 每次重建 dist 都会把旧包 mv 成 dist-prevN-<日期> 留作备份，累积到十几个目录后
+         Vite 的文件监听会一直扫这些构建产物：改一次 styles.css 就触发 "page reload
+         dist-prevXX/index.html"，白白重载页面、还白耗 CPU。这里把构建产物目录全部排除。 */
+      watch: {
+        ignored: ['**/dist/**', '**/dist-*/**', '**/node_modules/**', '**/.git/**']
+      },
       proxy: {
         /* The geochat app runs with VITE_BASE_PATH=/geochat/ (same as its compose build), so the
            prefix must be PRESERVED end-to-end: page, assets and /geochat/api all resolve inside

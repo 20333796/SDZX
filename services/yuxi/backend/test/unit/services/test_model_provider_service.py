@@ -256,7 +256,11 @@ def test_builtin_provider_templates_default_to_openai_provider_type():
         for provider in BUILTIN_PROVIDERS
     }
     assert provider_types == {"openai"}
-    assert all("ollama" not in provider["provider_id"] for provider in BUILTIN_PROVIDERS)
+    # 内置 provider 只允许 openai 兼容类型；local-ollama 走的是 Ollama 的 OpenAI 兼容端点，
+    # 因此按 provider_type 判定，而不是按 provider_id 是否包含 "ollama"。
+    assert all(
+        (provider.get("provider_type") or "openai") != "ollama" for provider in BUILTIN_PROVIDERS
+    )
 
 
 @pytest.mark.parametrize(

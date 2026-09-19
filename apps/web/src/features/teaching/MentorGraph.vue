@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ExternalLink, Search, SlidersHorizontal, UsersRound } from '@lucide/vue'
+import { useRoute } from 'vue-router'
+import { ArrowLeft, ExternalLink, Search, SlidersHorizontal, UsersRound } from '@lucide/vue'
 import * as THREE from 'three'
 import { loadOfficialTeacherDirectory, mentors, mentorSourcePages, officialTopLevelUnits, type Mentor, type MentorSchool } from '@/config/mentorGraph'
 
@@ -10,6 +11,7 @@ type CampusDepartment = { name: string; teachers: number }
 type CampusCollege = { school: MentorSchool; departments: CampusDepartment[] }
 
 const threeTarget = ref<HTMLDivElement | null>(null)
+const route = useRoute()
 const scope = ref<Scope>('全部单位')
 const selectedUnit = ref<string>()
 const search = ref('')
@@ -31,8 +33,12 @@ type MentorGraph3D = {
   lines: Array<{ material: THREE.LineBasicMaterial; baseOpacity: number; phase: number }>
   hovered?: THREE.Sprite
   cameraDistance: number
+  /** 视图平移偏移（相机平面内的世界坐标），左键拖拽画布时更新。 */
+  pan: { x: number; y: number }
+  /** 用户主动旋转的偏航角（叠加在自动缓摆之上），右键 / Shift 拖拽时更新。 */
+  userYaw: number
   rotationOffset: number
-  pointerState?: { x: number; y: number; rotationOffset: number; pitch: number; moved: boolean }
+  pointerState?: { x: number; y: number; mode: 'pan' | 'rotate'; panX: number; panY: number; rotYaw: number; rotPitch: number; moved: boolean }
   pitch: number
   paused: boolean
   abortController: AbortController
@@ -92,6 +98,15 @@ function openCampusSchool(school: MentorSchool) {
 function openCampusDepartment(school: MentorSchool, unit: string) {
   selectedUnit.value = unit
   scope.value = school
+}
+
+/** 图谱下钻层级：全校 → 学院 → 二级单位；返回上一级逐层回退。 */
+function goBackLevel() {
+  if (selectedUnit.value) {
+    selectedUnit.value = undefined
+    return
+  }
+  resetFilters()
 }
 
 function graphData() {
@@ -345,6 +360,8 @@ function renderMentorGraph3D() {
     effects: [],
     lines: [],
     cameraDistance: scope.value === '全部单位' ? 18 : 15,
+    pan: { x: 0, y: 0 },
+    userYaw: 0,
     rotationOffset: -.45,
     pitch: -.16,
     paused: false,
@@ -394,7 +411,9 @@ function renderMentorGraph3D() {
 
   const resize = () => {
     const bounds = target.getBoundingClientRect()
-    renderer.setSize(bounds.width, bounds.height, false)
+    // 默认 updateStyle=true：同步写入 canvas 的 CSS 尺寸。dpr>1 的移动端若不写 CSS，
+    // 画布会按属性尺寸（2 倍）显示，视野被裁掉一半，图谱看起来一片空白。
+    renderer.setSize(bounds.width, bounds.height)
     camera.aspect = bounds.width / Math.max(1, bounds.height)
     camera.updateProjectionMatrix()
   }
@@ -420,9 +439,11 @@ function renderMentorGraph3D() {
     if (hit?.kind === 'university') resetFilters()
   }
   renderer.domElement.addEventListener('pointerdown', (event) => {
-    renderer.domElement.setPointerCapture(event.pointerId)
+    try { renderer.domElement.setPointerCapture(event.pointerId) } catch { /* 合成事件无真实 pointerId，忽略 */ }
     state.paused = true
-    state.pointerState = { x: event.clientX, y: event.clientY, rotationOffset: state.rotationOffset, pitch: state.pitch, moved: false }
+    // 左键拖拽 = 平移；右键 / Shift 拖拽 = 旋转（偏航 + 俯仰）。
+    const mode: 'pan' | 'rotate' = event.button === 2 || event.shiftKey || event.ctrlKey ? 'rotate' : 'pan'
+    state.pointerState = { x: event.clientX, y: event.clientY, mode, panX: state.pan.x, panY: state.pan.y, rotYaw: state.userYaw, rotPitch: state.pitch, moved: false }
   }, { signal: state.abortController.signal })
   renderer.domElement.addEventListener('pointermove', (event) => {
     const pointerState = state.pointerState
@@ -433,9 +454,18 @@ function renderMentorGraph3D() {
     const deltaX = event.clientX - pointerState.x
     const deltaY = event.clientY - pointerState.y
     if (Math.abs(deltaX) + Math.abs(deltaY) > 3) pointerState.moved = true
-    state.rotationOffset = pointerState.rotationOffset + deltaX * .009
-    state.pitch = Math.max(-.78, Math.min(.38, pointerState.pitch + deltaY * .004))
+    if (pointerState.mode === 'rotate') {
+      // 围绕中点旋转：水平改偏航，垂直改俯仰，与原版手感一致。
+      state.userYaw = Math.max(-2.8, Math.min(2.8, pointerState.rotYaw + deltaX * .005))
+      state.pitch = Math.max(-.78, Math.min(.38, pointerState.rotPitch + deltaY * .004))
+      return
+    }
+    // 平移：按当前相机距离换算世界位移，把图谱在视野内左右上下移动。
+    const worldPerPixel = state.cameraDistance / 500
+    state.pan.x = Math.max(-10, Math.min(10, pointerState.panX - deltaX * worldPerPixel))
+    state.pan.y = Math.max(-6, Math.min(6, pointerState.panY + deltaY * worldPerPixel))
   }, { signal: state.abortController.signal })
+  renderer.domElement.addEventListener('contextmenu', (event) => event.preventDefault(), { signal: state.abortController.signal })
   renderer.domElement.addEventListener('pointerup', (event) => {
     const pointerState = state.pointerState
     state.pointerState = undefined
@@ -450,6 +480,10 @@ function renderMentorGraph3D() {
     state.cameraDistance = Math.max(7, Math.min(38, state.cameraDistance + event.deltaY * .012))
   }, { passive: false, signal: state.abortController.signal })
   resize()
+  // 窄画布（手机竖屏）按纵横比拉远初始相机：全校图谱横向跨度约 ±8.6 世界单位，
+  // 固定距离 18 在 aspect < 1 时横向视野不足，节点会整体落在视野外。
+  const aspectFactor = scope.value === '全部单位' ? Math.max(1, 1.5 / camera.aspect) : 1
+  state.cameraDistance = Math.min(36, (scope.value === '全部单位' ? 18 : 15) * aspectFactor)
   threeResizeObserver = new ResizeObserver(resize)
   threeResizeObserver.observe(target)
   let previousTime = performance.now()
@@ -458,8 +492,8 @@ function renderMentorGraph3D() {
     const elapsed = Math.min(48, time - previousTime)
     previousTime = time
     if (!state.paused) state.rotationOffset += elapsed * Math.PI * 2 / 9000
-    // Keep the information plane readable while retaining a continuous depth motion.
-    root.rotation.set(state.pitch, Math.sin(state.rotationOffset) * .24, 0)
+    // 相机随平移偏移移动；偏航 = 用户旋转 + 自动缓摆，保持信息面可读。
+    root.rotation.set(state.pitch, state.userYaw + Math.sin(state.rotationOffset) * .24, 0)
     state.effects.forEach(({ sprite, label, labelBaseScale, baseScale, phase }) => {
       const pulse = 1 + Math.sin(time * .0022 + phase) * .03
       const hoverScale = sprite === state.hovered ? 1.24 : 1
@@ -469,8 +503,9 @@ function renderMentorGraph3D() {
     state.lines.forEach(({ material, baseOpacity, phase }) => {
       material.opacity = baseOpacity + Math.sin(time * .0017 + phase) * .12
     })
-    camera.position.set(0, 1.5, state.cameraDistance)
-    camera.lookAt(0, 0, 0)
+    // 相机随平移偏移移动，保持固定俯视角度；滚轮只改远近。
+    camera.position.set(state.pan.x, 1.5 + state.pan.y, state.cameraDistance)
+    camera.lookAt(state.pan.x, state.pan.y, 0)
     renderer.render(scene, camera)
     threeFrame = requestAnimationFrame(animate)
   }
@@ -478,12 +513,26 @@ function renderMentorGraph3D() {
 }
 
 onMounted(async () => {
+  const routeMentor = typeof route.query.mentor === 'string' ? route.query.mentor : ''
+  const routeQuery = typeof route.query.q === 'string' ? route.query.q : ''
+  const routeSchool = typeof route.query.school === 'string' ? route.query.school : ''
+  if (routeSchool && schools.value.includes(routeSchool as Scope)) {
+    scope.value = routeSchool as Scope
+  }
+  search.value = routeMentor || routeQuery
   await nextTick()
   renderMentorGraph3D()
   try {
     const allTeachers = await loadOfficialTeacherDirectory()
     sourceStatus.value = 'ready'
     directoryMentors.value = allTeachers
+    // The initial fallback directory only contains one college. Re-apply a deep link
+    // after the complete official directory has arrived so school-specific resource
+    // links also work when the target college was not in the fallback slice.
+    if (routeSchool && schools.value.includes(routeSchool as Scope)) {
+      scope.value = routeSchool as Scope
+      selectedUnit.value = undefined
+    }
   } catch {
     sourceStatus.value = 'fallback'
   }
@@ -503,7 +552,7 @@ onBeforeUnmount(() => disposeMentorGraph3D())
       <div>
         <p class="eyebrow">教师与导师图谱 · 官网公开信息</p>
         <h2>全校教师关系图谱</h2>
-        <p>教师与官方所属教学科研单位建立关系；导师类别以节点颜色标识，研究方向连线仅保留个人页已核验信息。</p>
+        <p>教师与官方所属教学科研单位建立关系；导师类别以节点颜色标识，研究方向连线来自官方教师主页公开简介的结构化提取。</p>
       </div>
       <div class="coverage" aria-label="收录范围"><strong>{{ scope === '全部单位' ? campusUnits.length : filteredMentors.length }}</strong><span>{{ scope === '全部单位' ? '个学院单位' : '位公开教师' }}</span><strong>{{ scope === '全部单位' ? campusDepartmentCount : mentorCount }}</strong><span>{{ scope === '全部单位' ? '个二级单位' : '位公开导师' }}</span></div>
     </header>
@@ -515,6 +564,10 @@ onBeforeUnmount(() => disposeMentorGraph3D())
     </div>
 
     <div v-if="filteredMentors.length" class="graph-workbench" :class="{ 'campus-workbench': scope === '全部单位' }">
+      <button v-if="scope !== '全部单位'" class="graph-back" type="button" @click="goBackLevel">
+        <ArrowLeft :size="15" />{{ selectedUnit ? '返回学院' : '返回全校图谱' }}
+      </button>
+      <div class="graph-hint" aria-hidden="true">左键拖拽平移 · 右键或 Shift 拖拽旋转 · 滚轮缩放</div>
       <div ref="threeTarget" class="mentor-canvas" :aria-label="scope === '全部单位' ? '可拖拽缩放的全校单位关系图' : '可拖拽缩放的导师关系图'"></div>
       <aside v-if="scope !== '全部单位'" class="mentor-inspector" aria-label="导师详情">
         <div class="inspector-kicker"><span :class="selected.school === '地球科学学院' ? 'earth' : 'physics'"></span>{{ selected.school }}</div>
@@ -522,7 +575,6 @@ onBeforeUnmount(() => disposeMentorGraph3D())
         <div v-if="selected.mentorTypes?.length" class="detail-group"><strong>导师类别</strong><div class="tags mentor-types"><span v-for="type in selected.mentorTypes" :key="type">{{ type }}</span></div></div>
         <div v-if="selected.subjects?.length" class="detail-group"><strong>平台公开学科</strong><div class="tags"><span v-for="subject in selected.subjects" :key="subject">{{ subject }}</span></div></div>
         <div v-if="selected.directions.length" class="detail-group"><strong>研究方向</strong><div class="tags"><span v-for="direction in selected.directions" :key="direction">{{ direction }}</span></div></div>
-        <p v-else class="unstructured-note">该教师已纳入官网师资名录；研究方向尚未按本图谱的数据口径结构化。</p>
         <div v-if="selected.courses?.length" class="detail-group"><strong>官网列示课程</strong><div class="tags courses"><span v-for="course in selected.courses" :key="course">{{ course }}</span></div></div>
         <a class="source-link" :href="selected.sourceUrl" target="_blank" rel="noreferrer">查看官网教师页 <ExternalLink :size="15" /></a>
       </aside>
@@ -530,7 +582,7 @@ onBeforeUnmount(() => disposeMentorGraph3D())
     <div v-else class="empty-state"><UsersRound :size="24" /><p>当前筛选范围内没有官方公开教师记录。</p><button @click="resetFilters">清除筛选</button></div>
 
     <footer class="source-register">
-      <div><strong>数据口径</strong><span>{{ sourceStatus === 'ready' ? '已同步官方平台全量公开教师记录。' : sourceStatus === 'geophysics' ? '已优先加载地球物理学院，正在后台同步全校公开教师记录。' : '官方平台暂不可用，显示已收录的来源数据。' }} 所属单位、公开学科与导师类别均直接使用平台字段；研究方向和课程不推断。</span></div>
+      <div><strong>数据口径</strong><span>{{ sourceStatus === 'ready' ? '已同步官方平台全量公开教师记录。' : sourceStatus === 'geophysics' ? '已优先加载地球物理学院，正在后台同步全校公开教师记录。' : '官方平台暂不可用，显示已收录的来源数据。' }} 所属单位、公开学科与导师类别均直接使用平台字段；研究方向自官方教师主页公开简介提取结构化，主页未列示者不推断。</span></div>
       <div class="source-actions">
         <a :href="mentorSourcePages.facultyPortal" target="_blank" rel="noreferrer">全校官方教师平台 <ExternalLink :size="14" /></a>
       </div>
@@ -541,10 +593,9 @@ onBeforeUnmount(() => disposeMentorGraph3D())
 <style scoped>
 .mentor-graph { padding: 70px 0 36px; border-top: 1px solid #d9eaf3; }.mentor-header { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 30px; }.mentor-header > div:first-child { max-width: 720px; }.mentor-header h2 { margin: 0; color: #123a60; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; font-size: clamp(30px, 3vw, 42px); font-weight: 800; letter-spacing: 0; }.mentor-header p:not(.eyebrow) { margin: 14px 0 0; color: #60788d; line-height: 1.85; }.coverage { display: grid; grid-template-columns: auto auto; gap: 3px 11px; min-width: 178px; padding: 8px 0 8px 23px; border-left: 2px solid #b9ddec; }.coverage strong { color: #0879b8; font-size: 27px; line-height: 1; }.coverage span { align-self: center; color: #6d8495; font-size: 12px; }
 .mentor-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }.school-select { display: flex; align-items: center; gap: 9px; min-width: 244px; padding: 0 12px; color: #59788e; background: #edf7fb; border: 1px solid #c9e3ee; border-radius: 4px; font-size: 12px; font-weight: 700; }.school-select span { flex: 0 0 auto; white-space: nowrap; }.school-select select { width: 100%; height: 38px; min-width: 0; color: #173f5b; background: transparent; border: 0; outline: 0; font: inherit; font-weight: 700; }.mentor-search { display: flex; align-items: center; gap: 8px; min-width: 260px; max-width: 340px; margin-left: auto; padding: 0 11px; color: #6d93a9; background: #fff; border: 1px solid #c9e3ee; border-radius: 4px; }.mentor-search input { width: 100%; height: 38px; min-width: 0; color: #173f5b; background: transparent; border: 0; outline: 0; font-size: 13px; }.reset-button { display: grid; place-items: center; width: 38px; height: 38px; color: #0879b8; background: #edf7fb; border: 1px solid #c9e3ee; border-radius: 4px; }
-.graph-workbench { display: grid; grid-template-columns: minmax(0, 1fr) 310px; min-height: 550px; overflow: hidden; background: #f6fbfe; border: 1px solid #bad9e8; box-shadow: 0 16px 36px rgba(38, 94, 122, .08); }.mentor-canvas { min-height: 550px; background: linear-gradient(rgba(70, 142, 177, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(70, 142, 177, .08) 1px, transparent 1px), radial-gradient(circle at 50% 50%, #ffffff 0, #f5fbfe 72%); background-size: 36px 36px, 36px 36px, auto; }.mentor-inspector { display: flex; flex-direction: column; padding: 27px 25px; color: #35566c; background: #ffffff; border-left: 1px solid #c7dfe9; }.inspector-kicker { display: flex; align-items: center; gap: 7px; color: #58798e; font-size: 12px; font-weight: 800; }.inspector-kicker span { width: 8px; height: 8px; border-radius: 50%; }.inspector-kicker .physics { background: #1987c7; }.inspector-kicker .earth { background: #c68839; }.mentor-inspector h3 { margin: 18px 0 3px; color: #173f5b; font-size: 28px; }.mentor-title { margin: 0; color: #0879b8; font-size: 13px; font-weight: 800; }.mentor-unit { margin: 6px 0 0; color: #718692; font-size: 12px; }.mentor-summary { margin: 19px 0 0; color: #5d7283; font-size: 13px; line-height: 1.8; }.detail-group { margin-top: 20px; }.detail-group strong { color: #264b65; font-size: 12px; }.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }.tags span { padding: 5px 7px; color: #35566c; background: #e7f1f7; border-radius: 2px; font-size: 11px; line-height: 1.45; }.tags.mentor-types span { color: #075a9d; background: #dceef8; }.tags.courses span { color: #8b5d1e; background: #fff0d8; }.source-link { display: inline-flex; align-items: center; gap: 5px; margin-top: auto; padding-top: 24px; color: #0879b8; font-size: 13px; font-weight: 800; text-decoration: none; }.source-link:hover, .source-register a:hover { color: #075a9d; text-decoration: underline; }
+.graph-workbench { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 310px; min-height: 550px; overflow: hidden; background: #f6fbfe; border: 1px solid #bad9e8; box-shadow: 0 16px 36px rgba(38, 94, 122, .08); }.graph-back { position: absolute; top: 14px; left: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; color: #0b6cb8; background: rgba(255, 255, 255, .94); border: 1px solid #c9e3ee; border-radius: 999px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(38, 94, 122, .14); transition: color .2s ease, border-color .2s ease, box-shadow .2s ease; }.graph-back:hover { color: #08689a; border-color: #a9d4ea; box-shadow: 0 8px 20px rgba(38, 94, 122, .2); }.graph-hint { position: absolute; bottom: 12px; left: 14px; z-index: 3; padding: 5px 11px; color: #6d8fa5; background: rgba(255, 255, 255, .82); border: 1px solid #d8e9f3; border-radius: 999px; font-size: 11.5px; pointer-events: none; }.mentor-canvas { min-height: 550px; background: linear-gradient(rgba(70, 142, 177, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(70, 142, 177, .08) 1px, transparent 1px), radial-gradient(circle at 50% 50%, #ffffff 0, #f5fbfe 72%); background-size: 36px 36px, 36px 36px, auto; }.mentor-inspector { display: flex; flex-direction: column; padding: 27px 25px; color: #35566c; background: #ffffff; border-left: 1px solid #c7dfe9; }.inspector-kicker { display: flex; align-items: center; gap: 7px; color: #58798e; font-size: 12px; font-weight: 800; }.inspector-kicker span { width: 8px; height: 8px; border-radius: 50%; }.inspector-kicker .physics { background: #1987c7; }.inspector-kicker .earth { background: #c68839; }.mentor-inspector h3 { margin: 18px 0 3px; color: #173f5b; font-size: 28px; }.mentor-title { margin: 0; color: #0879b8; font-size: 13px; font-weight: 800; }.mentor-unit { margin: 6px 0 0; color: #718692; font-size: 12px; }.mentor-summary { margin: 19px 0 0; color: #5d7283; font-size: 13px; line-height: 1.8; }.detail-group { margin-top: 20px; }.detail-group strong { color: #264b65; font-size: 12px; }.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }.tags span { padding: 5px 7px; color: #35566c; background: #e7f1f7; border-radius: 2px; font-size: 11px; line-height: 1.45; }.tags.mentor-types span { color: #075a9d; background: #dceef8; }.tags.courses span { color: #8b5d1e; background: #fff0d8; }.source-link { display: inline-flex; align-items: center; gap: 5px; margin-top: auto; padding-top: 24px; color: #0879b8; font-size: 13px; font-weight: 800; text-decoration: none; }.source-link:hover, .source-register a:hover { color: #075a9d; text-decoration: underline; }
 .campus-workbench { display: block; height: clamp(525px, 68.75svh, 650px); min-height: 0; max-height: 650px; }.campus-network { display: block; width: 100%; height: 100%; min-height: 0; max-height: 100%; touch-action: none; cursor: grab; background: linear-gradient(rgba(70, 142, 177, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(70, 142, 177, .07) 1px, transparent 1px), radial-gradient(circle at 50% 50%, #ffffff 0, #f4fbfe 72%); background-size: 36px 36px, 36px 36px, auto; }.campus-network:active { cursor: grabbing; }.campus-link { stroke: #bad9e7; stroke-linecap: round; }.campus-school-link { stroke-width: 1.5; opacity: .82; }.campus-department-link { stroke-width: 1; opacity: .62; }.campus-unit, .campus-department { cursor: pointer; outline: none; }.campus-unit circle { fill: #147aa9; stroke: #ffffff; stroke-width: 2; filter: drop-shadow(0 5px 8px rgba(20, 111, 153, .18)); transition: fill .2s ease, r .2s ease; }.campus-unit text, .campus-department text { fill: #244d69; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; letter-spacing: 0; text-anchor: middle; paint-order: stroke; stroke: #f8fcfe; stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }.campus-unit text { font-size: 12px; font-weight: 800; }.campus-department circle { fill: #62a9c7; stroke: #ffffff; stroke-width: 1.5; filter: drop-shadow(0 3px 5px rgba(35, 111, 145, .14)); transition: fill .2s ease, r .2s ease; }.campus-department text { fill: #6a8798; font-size: 10px; font-weight: 600; }.campus-unit:hover circle, .campus-unit:focus circle { fill: #08689a; r: 30px; }.campus-department:hover circle, .campus-department:focus circle { fill: #2789b5; r: 14px; }.campus-core circle { fill: #123f66; stroke: #ffffff; stroke-width: 2; filter: drop-shadow(0 8px 13px rgba(18, 63, 102, .22)); }.campus-core text { fill: #ffffff; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 13px; font-weight: 800; text-anchor: middle; }.campus-core { pointer-events: none; }
 .graph-loading, .empty-state { display: grid; justify-items: center; align-content: center; min-height: 320px; gap: 10px; color: #58798e; background: #f7fbfd; border: 1px solid #c8dfeb; }.empty-state p { margin: 0; }.empty-state button { padding: 7px 10px; color: #0870bc; background: transparent; border: 0; font-weight: 800; }.source-register { display: flex; justify-content: space-between; gap: 30px; margin-top: 17px; padding-top: 18px; border-top: 1px solid #d9e7f0; }.source-register > div:first-child { display: grid; flex: 1; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }.source-register strong { color: #274e6b; font-size: 12px; white-space: nowrap; }.source-register span { color: #718692; font-size: 12px; line-height: 1.7; }.source-actions { display: flex; flex-wrap: wrap; align-content: start; justify-content: end; gap: 9px 15px; }.source-register a { display: inline-flex; align-items: center; gap: 4px; color: #0870bc; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
-.unstructured-note { margin: 22px 0 0; padding: 11px 12px; color: #677d8c; background: #eef4f7; border-left: 2px solid #9cb7c7; font-size: 12px; line-height: 1.7; }
 @media (max-width: 900px) { .mentor-header { align-items: start; flex-direction: column; }.coverage { grid-template-columns: repeat(4, auto); min-width: 0; padding-left: 0; border-top: 1px solid #bfd6e5; border-left: 0; padding-top: 14px; }.graph-workbench { grid-template-columns: 1fr; }.mentor-inspector { min-height: 330px; border-top: 1px solid #b9d3e4; border-left: 0; }.mentor-canvas { min-height: 430px; }.source-register { align-items: start; flex-direction: column; }.source-actions { justify-content: start; } }
 @media (max-width: 600px) { .mentor-graph { padding: 48px 0 62px; }.mentor-controls { align-items: stretch; flex-wrap: wrap; }.school-select { width: 100%; }.mentor-search { min-width: 0; max-width: none; flex: 1; margin-left: 0; }.graph-workbench, .mentor-canvas { min-height: 370px; }.mentor-canvas { background-size: 24px 24px; }.source-register > div:first-child { grid-template-columns: 1fr; gap: 6px; } }
 </style>

@@ -139,7 +139,9 @@ class MilvusGraphVectorStore:
 
     def _get_embedding_function(self, embedding_model_spec: str):
         model = select_embedding_model(embedding_model_spec)
-        batch_size = int(getattr(model, "batch_size", 40) or 40)
+        # DashScope text-embedding-v4 accepts at most 10 inputs per request
+        # for the configured account.
+        batch_size = min(int(getattr(model, "batch_size", 10) or 10), 10)
         return partial(model.abatch_encode, batch_size=batch_size)
 
     async def _search_graph_collection(

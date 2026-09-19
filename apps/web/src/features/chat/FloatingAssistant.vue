@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { MessageCircleMore, SendHorizontal, Sparkles, X } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import { pathTo } from '@/config/destinations'
+import { buildGeoChatAgentUrl } from '@/config/geochat'
 
 const router = useRouter()
 const open = ref(false)
@@ -24,7 +25,8 @@ function navigate(target: 'resources' | 'knowledge-graph' | 'geo-data') {
 function ask() {
   const question = prompt.value.trim()
   if (!question) return
-  void router.push({ name: 'assistant', query: { q: question, mode: 'conversation' } })
+  const url = buildGeoChatAgentUrl(question, 'conversation')
+  window.location.assign(url)
   open.value = false
 }
 

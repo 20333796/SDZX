@@ -26,6 +26,17 @@ export interface Citation {
   score: number
 }
 
+export interface ChatResourceReference {
+  id: string
+  title: string
+  category: 'courses' | 'practice' | 'mentor'
+  provider?: string | null
+  description: string
+  url?: string | null
+  embedded_url?: string | null
+  route?: string | null
+}
+
 export interface PortalNavigationLink {
   label: string
   target: string

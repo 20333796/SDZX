@@ -55,6 +55,12 @@ export const router = createRouter({
       component: () => import('@/pages/assistant/Bridge.vue')
     },
     {
+      // Keep the established public URL while serving the current portal assistant.
+      path: '/geochat/agent',
+      name: 'geochat-agent',
+      component: () => import('@/pages/assistant/index.vue')
+    },
+    {
       // Layout route: the header, hero band, footer and floating assistant live in PortalLayout, and
       // every column renders inside it. The children carry absolute paths (a child path starting with
       // '/' is rooted at the domain), so the layout supplies the chrome without prefixing the URLs —

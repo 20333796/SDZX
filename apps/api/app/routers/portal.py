@@ -37,7 +37,7 @@ DEFAULT_PORTAL_CONFIG = PortalConfig(
         PortalNavigationGroup(
             title="能力智验",
             links=[
-                PortalNavigationLink(label="地学智能设计", target="geology-design"),
+                PortalNavigationLink(label="智能应用", target="geology-design"),
                 PortalNavigationLink(label="独立能力测评", target="capability-assessment"),
                 PortalNavigationLink(label="成长画像", target="learning-profile"),
             ],

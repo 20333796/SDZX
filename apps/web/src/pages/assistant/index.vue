@@ -2,9 +2,9 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, ArrowRight, Bot, BookOpen, BrainCircuit, Check, ChevronDown, Globe2, LibraryBig, Link2, Mic, MoreHorizontal, Plus, Search, SendHorizontal, Sparkles, UserRoundSearch } from '@lucide/vue'
-import type { Citation } from '@/types'
+import type { ChatResourceReference, Citation } from '@/types'
 
-type Message = { role: 'assistant' | 'user'; content: string; citations?: Citation[] }
+type Message = { role: 'assistant' | 'user'; content: string; citations?: Citation[]; resources?: ChatResourceReference[] }
 type Mode = 'conversation' | 'search' | 'inquiry'
 
 const route = useRoute()
@@ -18,6 +18,7 @@ const activeNavigation = ref('“深地·智学”智能体')
 const messages = ref<Message[]>([])
 const answerScroll = ref<HTMLElement | null>(null)
 const showSources = ref(true)
+const activeResource = ref<ChatResourceReference | null>(null)
 const currentPrompt = computed(() => typeof route.query.q === 'string' ? route.query.q : '')
 const navigation = [
   { label: '新对话', icon: Plus }, { label: '智能体广场', icon: Bot }, { label: '“深地·智学”智能体', icon: Sparkles },
@@ -29,6 +30,22 @@ const quickActions = [
   { label: '研究方向查找', icon: Search, value: '储层表征与建模有哪些常见研究方法？' },
   { label: '人才培养', icon: BrainCircuit, value: '地质资源与地质工程学科的核心课程如何衔接？' }
 ]
+
+const resourceLabels: Record<ChatResourceReference['category'], string> = {
+  courses: '课程', practice: '虚拟仿真', mentor: '导师图谱'
+}
+
+function openResource(resource: ChatResourceReference) {
+  if (resource.route?.startsWith('/')) {
+    void router.push(resource.route)
+    return
+  }
+  activeResource.value = resource
+}
+
+function openExternal(resource: ChatResourceReference) {
+  if (resource.url) window.open(resource.url, '_blank', 'noopener,noreferrer')
+}
 
 async function scrollAnswers() {
   await nextTick()
@@ -82,9 +99,10 @@ async function sendQuestion(text = prompt.value) {
         const dataLine = event.split('\n').find((line) => line.startsWith('data: '))
         if (!dataLine) continue
         const eventName = event.split('\n').find((line) => line.startsWith('event: '))?.slice(7)
-        const payload = JSON.parse(dataLine.slice(6)) as { content?: string; citations?: Citation[] }
+        const payload = JSON.parse(dataLine.slice(6)) as { content?: string; citations?: Citation[]; resources?: ChatResourceReference[] }
         if (payload.content) answer.content += payload.content
         if (eventName === 'sources' && payload.citations) answer.citations = payload.citations
+        if (eventName === 'resources' && payload.resources) answer.resources = payload.resources
       }
       void scrollAnswers()
     }
@@ -130,7 +148,7 @@ onMounted(() => {
         <article v-for="(message, index) in messages" :key="index" :class="['conversation-item', message.role]">
           <div v-if="message.role === 'assistant'" class="answer-label"><span class="assistant-avatar"><Sparkles :size="15" /></span>地智</div>
           <div class="bubble"><p v-if="message.content">{{ message.content }}</p><p v-else class="thinking"><span></span>正在组织地质学习依据</p></div>
-          <button v-if="message.role === 'assistant' && message.citations?.length" class="source-button" @click="showSources = !showSources">查看参考来源 <ArrowRight :size="14" /></button>
+          <button v-if="message.role === 'assistant' && (message.citations?.length || message.resources?.length)" class="source-button" @click="showSources = !showSources">查看参考来源 <ArrowRight :size="14" /></button>
         </article>
         <section v-if="planning" class="planning-card" aria-label="回答规划过程">
           <button class="planning-summary" type="button"><span class="planning-orbit"><Sparkles :size="15" /></span><strong>规划过程</strong><small>正在为本次问题组织学习路径</small><ChevronDown :size="17" /></button>
@@ -158,9 +176,20 @@ onMounted(() => {
     <aside :class="['sources-panel', { 'is-closed': !showSources }]">
       <header><strong>地学指令</strong><button :aria-label="showSources ? '关闭参考来源' : '展开参考来源'" @click="showSources = !showSources"><span v-if="showSources">×</span><ArrowRight v-else :size="20" /></button></header>
       <div v-if="showSources" class="sources-content">
-        <p>基于当前问答，为您整理了相关学习来源</p><h2>课程与知识库</h2>
+        <p>基于当前问答，为您整理了可追溯的知识与门户资源</p><h2>知识库依据</h2>
         <template v-if="messages.at(-1)?.citations?.length">
           <a v-for="citation in messages.at(-1)?.citations" :key="`${citation.document_id}-${citation.source_locator}`" href="#sources"><span>{{ citation.title }}</span><b>{{ citation.course_name || '课程知识库' }}</b><small>{{ citation.excerpt }}</small></a>
+        </template>
+        <template v-if="messages.at(-1)?.resources?.length">
+          <h2 class="resource-heading">可直接打开</h2>
+          <article v-for="resource in messages.at(-1)?.resources" :key="resource.id" class="resource-item">
+            <button class="resource-main" type="button" @click="openResource(resource)">
+              <span class="resource-kind">{{ resourceLabels[resource.category] }}</span>
+              <b>{{ resource.title }}</b>
+              <small>{{ resource.provider }} · {{ resource.description }}</small>
+            </button>
+            <button v-if="resource.url" class="resource-external" type="button" aria-label="新窗口打开" title="新窗口打开" @click="openExternal(resource)"><Globe2 :size="16" /></button>
+          </article>
         </template>
         <template v-else>
           <a href="#source"><span>油矿地质学</span><b>课程知识图谱</b><small>油气成藏、储层与圈闭的基础学习资料。</small></a>
@@ -170,6 +199,15 @@ onMounted(() => {
       </div>
       <div v-else class="sources-closed"><MoreHorizontal :size="24" /><span>参考来源已收起</span></div>
     </aside>
+    <div v-if="activeResource" class="resource-modal" role="dialog" aria-modal="true" :aria-label="activeResource.title">
+      <div class="resource-modal-backdrop" @click="activeResource = null"></div>
+      <section class="resource-modal-panel">
+        <header><div><strong>{{ activeResource.title }}</strong><small>{{ activeResource.provider }}</small></div><button type="button" aria-label="关闭预览" @click="activeResource = null">×</button></header>
+        <iframe v-if="activeResource.embedded_url" :src="activeResource.embedded_url" :title="activeResource.title" loading="lazy"></iframe>
+        <div v-else class="resource-modal-empty">该资源不允许内嵌，请使用新窗口打开。</div>
+        <footer><button type="button" @click="openExternal(activeResource)">新窗口打开 <Globe2 :size="15" /></button></footer>
+      </section>
+    </div>
   </main>
 </template>
 
@@ -236,4 +274,28 @@ onMounted(() => {
 .workbench-bottom { padding-bottom: 27px; }.workbench-composer { min-height: 170px; }.workbench-bottom { padding-right: 8.4%; }.workbench-main { grid-template-rows: 28px minmax(0, 1fr) auto; }.assistant-topbar { height: 28px; border-bottom: 0; }.interest-title { margin-top: 14px; }.interest-list { justify-items: start; }.interest-list button { width: max-content; max-width: 100%; }.sources-panel header { padding-right: 20px; padding-left: 20px; }.sources-content { padding-right: 20px; padding-left: 20px; }
 @media (max-width: 620px) { .empty-conversation { padding-top: 6px; }.assistant-welcome { gap: 12px; }.assistant-welcome .empty-orbit { width: 36px; height: 36px; }.assistant-welcome h1 { margin-bottom: 7px; font-size: 18px; }.assistant-welcome p { font-size: 13px; }.interest-title { margin: 32px 0 13px 48px; font-size: 16px; }.interest-list { gap: 8px; margin-left: 48px; }.interest-list button { padding: 9px 10px; font-size: 13px; }.workbench-bottom { padding-right: 16px; padding-bottom: 11px; }.workbench-composer { min-height: 136px; } }
 @media (max-width: 620px) { .workbench-main { grid-template-rows: 57px minmax(0, 1fr) auto; }.assistant-topbar { height: auto; border-bottom: 1px solid #efeff4; } }
+
+.resource-heading { margin-top: 28px !important; padding-top: 19px; border-top: 1px solid #edf0f4; }
+.resource-item { display: flex; align-items: stretch; gap: 6px; margin-bottom: 10px; }
+.resource-main { display: grid; flex: 1; gap: 5px; padding: 13px 14px; color: inherit; background: #f7f8fa; border: 0; border-radius: 11px; text-align: left; transition: background 180ms ease, transform 180ms ease; }
+.resource-main:hover { background: #edf5fb; transform: translateY(-1px); }
+.resource-kind { color: #0871ba; font-size: 11px; font-weight: 800; letter-spacing: .03em; }
+.resource-main b { color: #183d5c; font-size: 14px; line-height: 1.45; }
+.resource-main small { color: #7f8d99; line-height: 1.5; }
+.resource-external { display: grid; place-items: center; width: 38px; color: #5b7690; background: #f2f6f9; border: 0; border-radius: 10px; transition: color 180ms ease, background 180ms ease; }
+.resource-external:hover { color: #0871ba; background: #e5f2fa; }
+.resource-modal { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 4vh 5vw; }
+.resource-modal-backdrop { position: absolute; inset: 0; background: rgba(16, 30, 43, .46); backdrop-filter: blur(3px); }
+.resource-modal-panel { position: relative; z-index: 1; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(1120px, 100%); height: min(86vh, 820px); overflow: hidden; background: #fff; border: 1px solid #d9e6ee; border-radius: 16px; box-shadow: 0 28px 80px rgba(11, 35, 55, .25); }
+.resource-modal-panel header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 18px; border-bottom: 1px solid #e5edf2; }
+.resource-modal-panel header div { display: grid; gap: 3px; min-width: 0; }
+.resource-modal-panel header strong { overflow: hidden; color: #183d5c; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.resource-modal-panel header small { overflow: hidden; color: #7b8e9d; text-overflow: ellipsis; white-space: nowrap; }
+.resource-modal-panel header button { width: 32px; height: 32px; color: #688095; background: transparent; border: 0; border-radius: 50%; font-size: 25px; line-height: 1; }
+.resource-modal-panel header button:hover { color: #0871ba; background: #edf5fa; }
+.resource-modal-panel iframe { width: 100%; height: 100%; border: 0; background: #f4f7f9; }
+.resource-modal-empty { display: grid; place-items: center; color: #657b8c; background: #f8fafb; }
+.resource-modal-panel footer { display: flex; justify-content: flex-end; padding: 10px 14px; border-top: 1px solid #e5edf2; }
+.resource-modal-panel footer button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; color: #fff; background: #0871ba; border: 0; border-radius: 7px; font-weight: 700; }
+@media (max-width: 620px) { .resource-modal { padding: 0; }.resource-modal-panel { width: 100%; height: 100%; border-radius: 0; } }
 </style>

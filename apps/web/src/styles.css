@@ -238,7 +238,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hero-shell::after { right: -12vw; bottom: 18%; left: auto; width: 38vw; height: 52px; background: #cfe4f6; border: 0; transform: rotate(6deg); }
 .strata { opacity: .48; }.strata-a { bottom: 0; border-top-color: #d8d5f5; border-bottom-color: #cbc9ea; }.strata-b { bottom: 22%; border-top-color: #dfddf8; border-bottom-color: #d5d3f0; }.topographic-lines { display: none; }
 
-.site-header { height: 82px; gap: 16px; padding: 0 4.2vw; background: rgba(255, 255, 255, .7); border-bottom-color: rgba(11, 108, 184, .14); backdrop-filter: blur(16px); }
+.site-header { height: 82px; gap: 16px; padding: 0 4.2vw; background: rgba(255, 255, 255, 0.20); border-bottom-color: rgba(11, 108, 184, .14); backdrop-filter: blur(16px); }
 .brand { color: #1e1e18; }.brand-mark { width: 35px; height: 35px; color: #fff; background: #0b6cb8; border: 0; border-radius: 12px; box-shadow: 0 5px 12px rgba(11, 108, 184, .2); }.brand-school { font-size: 15px; }.brand-divider { background: #b9cfe0; }.brand-product { color: #0b4f8c; font-size: 18px; }.home-nav, .header-action { color: #3c5a70; }.home-nav:hover, .header-action:hover { color: #0b6cb8; }
 .main-nav { justify-content: flex-end; }.nav-group { min-width: 104px; border-left-color: #d3e2ee; }.nav-group-primary { padding: 10px 12px; color: #2f4f66; }.nav-group-primary span { font-size: 14px; }.nav-group-primary small { min-height: 14px; margin-top: 4px; color: #7d99ad; font-size: 9px; }.nav-group:hover .nav-group-primary, .nav-group:focus-within .nav-group-primary { background: #e3f1fb; }.nav-group:hover .nav-group-primary span, .nav-group:focus-within .nav-group-primary span { color: #0b6cb8; }
 
@@ -248,7 +248,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .eyebrow { color: #0b6cb8; }.section-intro h2, h2 { color: #2d2d2d; font-family: "Alibaba PuHuiTi", "Microsoft YaHei", sans-serif; font-weight: 800; }.resource-toolbar button.selected { color: #0b6cb8; border-bottom-color: #0b6cb8; }.resource-item { background: #fff; border-color: #dfeaf2; }.resource-item:hover { background: #f5faff; }.resource-meta, .resource-link { color: #0b6cb8; }.resource-item h3 { color: #2d2d2d; }.resource-link:hover, .resource-link:focus-visible { color: #095a9c; }.learning-steps > div { color: #0b6cb8; border-left-color: #c8e2f6; }.learning-steps span { color: #0b6cb8; }.learning-steps h3 { color: #2d2d2d; }.practice-section { background: #0b3a63; }.practice-section .eyebrow, .practice-icon { color: #a8d4f0; }.application-columns article:first-child { background: #0b6cb8; }.application-feature button { color: #d9ecfa; }.site-footer { background: #0d4a86; }.site-footer strong { color: #ffd79c; }
 
 @media (max-width: 760px) {
-  .hero-shell { min-height: auto; }.site-header { height: 70px; padding: 0 18px; background: rgba(255, 255, 255, .85); }.brand-product { font-size: 17px; }.mobile-menu-toggle { color: #0b6cb8; border-color: #9ec7e4; }.mobile-navigation { top: 70px; background: #fff; border-bottom-color: #d2e4f0; box-shadow: 0 18px 32px rgba(20, 70, 118, .14); }.mobile-navigation strong { color: #0b6cb8; }.mobile-navigation button { color: #3c5a70; }.mobile-navigation section { border-bottom-color: #e8f1f7; }.hero-content { width: min(100% - 28px, 760px); padding: 42px 0 78px; }.hero-content h1 { font-size: 45px; }.hero-stats { display: none; }.ai-center-entry { bottom: 25px; font-size: 13px; }
+  .hero-shell { min-height: auto; }.site-header { height: 70px; padding: 0 18px; background: rgba(255, 255, 255, 1.00); }.brand-product { font-size: 17px; }.mobile-menu-toggle { color: #0b6cb8; border-color: #9ec7e4; }.mobile-navigation { top: 70px; background: #fff; border-bottom-color: #d2e4f0; box-shadow: 0 18px 32px rgba(20, 70, 118, .14); }.mobile-navigation strong { color: #0b6cb8; }.mobile-navigation button { color: #3c5a70; }.mobile-navigation section { border-bottom-color: #e8f1f7; }.hero-content { width: min(100% - 28px, 760px); padding: 42px 0 78px; }.hero-content h1 { font-size: 45px; }.hero-stats { display: none; }.ai-center-entry { bottom: 25px; font-size: 13px; }
 }
 
 /* Target home page composition: four-tier header, immersive hero and assistant dock. */
@@ -268,7 +268,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   left: auto;
   width: 54vw;
   height: 54vw;
-  border: 1px solid rgba(204, 236, 255, .1);
+  border: 1px solid rgba(204, 236, 255, 0.13);
   border-radius: 48% 52% 60% 40%;
   background: repeating-radial-gradient(ellipse at 45% 52%, transparent 0 31px, rgba(183, 224, 255, .06) 32px 33px);
   box-shadow: none;
@@ -288,16 +288,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .strata { z-index: -1; opacity: .3; transform: rotate(-7deg); }.strata-a { bottom: 45px; border-top-color: #a3dbff; border-bottom-color: #08579e; }.strata-b { bottom: 25%; border-top-color: #75c3f4; border-bottom-color: #0969b7; }.topographic-lines { display: block; z-index: -1; top: 30%; right: 7%; width: 36vw; height: 28vw; border-color: rgba(192, 229, 255, .15); box-shadow: 0 0 0 28px rgba(193, 230, 255, .04), 0 0 0 56px rgba(193, 230, 255, .03), 0 0 0 84px rgba(193, 230, 255, .025); }
 
 .site-header { height: 180px; align-items: flex-start; gap: 0; padding: 49px 4.1vw 0; background: rgba(0, 49, 116, .28); border-bottom: 1px solid rgba(189, 224, 255, .1); backdrop-filter: none; }
-.brand { align-items: center; gap: 11px; height: 60px; padding-right: 30px; color: #fff; border-right: 1px solid rgba(211, 234, 255, .18); }.brand-mark { width: 38px; height: 38px; color: #dff5ff; background: rgba(6, 116, 205, .55); border: 1px solid rgba(225, 247, 255, .7); border-radius: 50%; box-shadow: none; }.brand-school { font-size: 20px; font-weight: 800; }.brand-divider, .brand-product { display: none; }.home-nav { height: 60px; margin: 0 21px; padding: 11px 12px; color: #fff; font-size: 20px; font-weight: 800; }.home-nav:hover { color: #fff; }
-.main-nav { flex: 1; justify-content: space-between; height: 78px; }.nav-group { display: block; min-width: 0; flex: 0 1 auto; border-left: 1px solid rgba(211, 234, 255, .14); }.nav-group-primary { padding: 3px 16px 0; color: #fff; text-align: center; }.nav-group-primary span { font-size: 26px; font-weight: 800; line-height: 1.25; }.nav-group-primary small { display: block; min-height: 28px; margin-top: 14px; color: rgba(222, 241, 255, .8); font-size: 16px; font-weight: 700; line-height: 1.6; white-space: normal; }.nav-group:hover .nav-group-primary, .nav-group:focus-within .nav-group-primary { background: transparent; }.nav-group:hover .nav-group-primary span, .nav-group:focus-within .nav-group-primary span { color: #fff; text-shadow: 0 3px 14px rgba(0, 25, 72, .45); }
+.brand { align-items: center; gap: 11px; height: 60px; padding-right: 30px; color: #fff; border-right: 1px solid rgba(211, 234, 255, 0.34); }.brand-mark { width: 38px; height: 38px; color: #dff5ff; background: rgba(6, 116, 205, .55); border: 1px solid rgba(225, 247, 255, 0.20); border-radius: 50%; box-shadow: none; }.brand-school { font-size: 20px; font-weight: 800; }.brand-divider, .brand-product { display: none; }.home-nav { height: 60px; margin: 0 21px; padding: 11px 12px; color: #fff; font-size: 20px; font-weight: 800; }.home-nav:hover { color: #fff; }
+.main-nav { flex: 1; justify-content: space-between; height: 78px; }.nav-group { display: block; min-width: 0; flex: 0 1 auto; border-left: 1px solid rgba(211, 234, 255, 0.29); }.nav-group-primary { padding: 3px 16px 0; color: #fff; text-align: center; }.nav-group-primary span { font-size: 26px; font-weight: 800; line-height: 1.25; }.nav-group-primary small { display: block; min-height: 28px; margin-top: 14px; color: rgba(222, 241, 255, 0.22); font-size: 16px; font-weight: 700; line-height: 1.6; white-space: normal; }.nav-group:hover .nav-group-primary, .nav-group:focus-within .nav-group-primary { background: transparent; }.nav-group:hover .nav-group-primary span, .nav-group:focus-within .nav-group-primary span { color: #fff; text-shadow: 0 3px 14px rgba(0, 25, 72, .45); }
 .header-action { display: none; }
 
 .hero-content { position: relative; width: min(920px, calc(100% - 48px)); margin: 0 auto; padding: 60px 0 0; text-align: center; animation: reveal 620ms ease-out both; }.hero-identification { position: relative; display: grid; grid-template-columns: 1fr; gap: 6px; color: #fff; font-size: 19px; font-weight: 800; letter-spacing: .08em; }.hero-identification::before { content: "中国石油大学（北京）"; display: block; color: #fff; font-family: "STKaiti", "KaiTi", serif; font-size: 32px; letter-spacing: .15em; }.hero-identification > span { display: none; }.hero-identification { font-size: 0; }.hero-identification small { color: #e6f5ff; font-size: 13px; letter-spacing: .11em; }
-.hero-content h1 { position: relative; margin: 29px 0 0; color: #fff; font-family: "STKaiti", "KaiTi", serif; font-size: clamp(74px, 7.4vw, 112px); font-weight: 800; letter-spacing: .22em; line-height: 1; text-shadow: 0 6px 20px rgba(0, 24, 68, .28); }.hero-content h1::before, .hero-content h1::after { content: ""; position: absolute; top: 50%; width: 115px; height: 70px; border: 8px dotted rgba(211, 241, 255, .5); border-color: rgba(211, 241, 255, .55) transparent transparent transparent; border-radius: 50%; transform: translateY(-50%) rotate(45deg); }.hero-content h1::before { left: 6%; }.hero-content h1::after { right: 6%; transform: translateY(-50%) rotate(-135deg); }.hero-subtitle { margin: 16px 0 84px; color: #fff; font-size: clamp(27px, 3vw, 44px); font-weight: 900; letter-spacing: .03em; text-shadow: 0 4px 13px rgba(0, 29, 75, .32); }
-.ai-center-entry { left: 6.2vw; bottom: 40px; padding: 18px 24px; color: #fff; background: rgba(34, 83, 139, .75); border: 1px solid rgba(225, 246, 255, .3); border-radius: 34px; box-shadow: 0 12px 28px rgba(0, 20, 60, .2); font-size: 18px; font-weight: 800; }.ai-center-entry:hover { color: #fff; background: rgba(51, 116, 184, .92); }.hero-stats { right: 5.4vw; bottom: 45px; display: grid; gap: 24px; text-align: center; }.hero-stats div { gap: 3px; }.hero-stats span { color: #fff; font-family: Georgia, serif; font-size: 32px; font-style: italic; font-weight: 800; }.hero-stats strong { color: rgba(225, 244, 255, .75); font-size: 16px; font-weight: 700; }
+.hero-content h1 { position: relative; margin: 29px 0 0; color: #fff; font-family: "STKaiti", "KaiTi", serif; font-size: clamp(74px, 7.4vw, 112px); font-weight: 800; letter-spacing: .22em; line-height: 1; text-shadow: 0 6px 20px rgba(0, 24, 68, .28); }.hero-content h1::before, .hero-content h1::after { content: ""; position: absolute; top: 50%; width: 115px; height: 70px; border: 8px dotted rgba(211, 241, 255, 0.18); border-color: rgba(211, 241, 255, 0.78) transparent transparent transparent; border-radius: 50%; transform: translateY(-50%) rotate(45deg); }.hero-content h1::before { left: 6%; }.hero-content h1::after { right: 6%; transform: translateY(-50%) rotate(-135deg); }.hero-subtitle { margin: 16px 0 84px; color: #fff; font-size: clamp(27px, 3vw, 44px); font-weight: 900; letter-spacing: .03em; text-shadow: 0 4px 13px rgba(0, 29, 75, .32); }
+.ai-center-entry { left: 6.2vw; bottom: 40px; padding: 18px 24px; color: #fff; background: rgba(34, 83, 139, .75); border: 1px solid rgba(225, 246, 255, 0.16); border-radius: 34px; box-shadow: 0 12px 28px rgba(0, 20, 60, .2); font-size: 18px; font-weight: 800; }.ai-center-entry:hover { color: #fff; background: rgba(51, 116, 184, .92); }.hero-stats { right: 5.4vw; bottom: 45px; display: grid; gap: 24px; text-align: center; }.hero-stats div { gap: 3px; }.hero-stats span { color: #fff; font-family: Georgia, serif; font-size: 32px; font-style: italic; font-weight: 800; }.hero-stats strong { color: rgba(225, 244, 255, 1.00); font-size: 16px; font-weight: 700; }
 
 @media (max-width: 1120px) { .site-header { height: 136px; padding-top: 32px; }.brand-school { font-size: 16px; }.main-nav { height: 64px; }.nav-group-primary span { font-size: 18px; }.nav-group-primary small { margin-top: 8px; font-size: 11px; }.hero-content { padding-top: 48px; }.hero-subtitle { margin-bottom: 54px; }.hero-content h1::before, .hero-content h1::after { display: none; } }
-@media (max-width: 760px) { .hero-shell { min-height: 780px; }.hero-shell::before { top: 80px; right: -30vw; width: 100vw; height: 100vw; }.site-header { height: 72px; align-items: center; padding: 0 18px; background: rgba(0, 49, 116, .46); }.brand { height: auto; padding: 0; border: 0; }.brand-school, .home-nav, .main-nav { display: none; }.brand-university-logo { height: 30px; }.brand-mark { width: 32px; height: 32px; }.brand-product { display: inline; color: #fff; font-size: 18px; }.mobile-menu-toggle { color: #fff; border-color: rgba(222, 244, 255, .66); }.mobile-navigation { top: 72px; background: rgba(4, 65, 136, .98); border-bottom-color: rgba(222, 244, 255, .25); box-shadow: 0 18px 32px rgba(0, 13, 30, .3); }.mobile-navigation strong, .mobile-navigation button { color: #e9f7ff; }.mobile-navigation section { border-bottom-color: rgba(226, 240, 240, .16); }.hero-content { width: min(100% - 28px, 920px); padding-top: 74px; }.hero-identification::before { font-size: 21px; }.hero-identification small { font-size: 8px; }.hero-content h1 { margin-top: 21px; font-size: 62px; }.hero-subtitle { margin: 11px 0 42px; font-size: 23px; }.ai-center-entry { left: 18px; bottom: 20px; padding: 12px 15px; font-size: 13px; }.hero-stats { right: 18px; bottom: 20px; gap: 11px; }.hero-stats span { font-size: 17px; }.hero-stats strong { font-size: 9px; } }
+@media (max-width: 760px) { .hero-shell { min-height: 780px; }.hero-shell::before { top: 80px; right: -30vw; width: 100vw; height: 100vw; }.site-header { height: 72px; align-items: center; padding: 0 18px; background: rgba(0, 49, 116, .46); }.brand { height: auto; padding: 0; border: 0; }.brand-school, .home-nav, .main-nav { display: none; }.brand-university-logo { height: 30px; }.brand-mark { width: 32px; height: 32px; }.brand-product { display: inline; color: #fff; font-size: 18px; }.mobile-menu-toggle { color: #fff; border-color: rgba(222, 244, 255, 0.91); }.mobile-navigation { top: 72px; background: rgba(4, 65, 136, .98); border-bottom-color: rgba(222, 244, 255, 0.42); box-shadow: 0 18px 32px rgba(0, 13, 30, .3); }.mobile-navigation strong, .mobile-navigation button { color: #e9f7ff; }.mobile-navigation section { border-bottom-color: rgba(226, 240, 240, .16); }.hero-content { width: min(100% - 28px, 920px); padding-top: 74px; }.hero-identification::before { font-size: 21px; }.hero-identification small { font-size: 8px; }.hero-content h1 { margin-top: 21px; font-size: 62px; }.hero-subtitle { margin: 11px 0 42px; font-size: 23px; }.ai-center-entry { left: 18px; bottom: 20px; padding: 12px 15px; font-size: 13px; }.hero-stats { right: 18px; bottom: 20px; gap: 11px; }.hero-stats span { font-size: 17px; }.hero-stats strong { font-size: 9px; } }
 
 /* Reference-aligned homepage refinements. Geological imagery remains original to this platform. */
 .hero-shell {
@@ -387,7 +387,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hero-laurel::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 11px 23px at 48% 10%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 33% 24%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 27% 41%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 32% 58%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 43% 74%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 67% 29%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 73% 47%, #a9d7f4 0 60%, transparent 64%), radial-gradient(ellipse 11px 23px at 66% 65%, #a9d7f4 0 60%, transparent 64%); }
 .hero-laurel-left { left: -49px; transform: rotate(-17deg); }.hero-laurel-right { right: -49px; transform: scaleX(-1) rotate(-17deg); }
 
-.ai-center-entry { bottom: 103px; min-width: 224px; height: 70px; background: rgba(34, 112, 194, .68); border-color: rgba(202, 232, 255, .32); box-shadow: none; }
+.ai-center-entry { bottom: 103px; min-width: 224px; height: 70px; background: rgba(34, 112, 194, .68); border-color: rgba(202, 232, 255, 0.50); box-shadow: none; }
 .hero-stats { right: 4.5vw; bottom: 136px; gap: 23px; }.hero-stats span { font-size: 33px; }.hero-stats strong { font-size: 16px; }
 
 .site-header.is-condensed {
@@ -545,7 +545,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 /* 深部地层剖面：四条层界带自下而上堆叠——层界面（border-top 亮线 + 往复扫光）清晰可辨、
    随深度加深变暗，层内叠细密沉积层理纹理（::before）。各以 12/16/20/26s 错拍缓移、相邻层
-   倾向相反；层界扫光（::after）以 8-17s 沿界面掠过，给出"活动剖面"的直接观感。
+   倾向相反；层界面（::after）只做明暗呼吸，不再有任何横向掠光（用户要求去掉左→右闪动的光线）。
    读作"深地"的层序剖面（向下分层的地下结构），而不是地表山川；z-index -1 压在等高线环
    之上、所有内容之下。每层的倾角写进各自的关键帧：transform 是整体替换，动画期间静态
    rotate 会被覆盖（山峦版踩过的坑）。首版填充色贴背景渐变、36-74s 慢到肉眼不可感——
@@ -557,82 +557,153 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 .geo-stratum::before {
   content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(180deg, rgba(210, 235, 255, .09) 0 2px, transparent 2px 16px);
+  background: repeating-linear-gradient(180deg, rgba(210, 235, 255, 0.23) 0 2px, transparent 2px 16px);
 }
 .geo-stratum::after {
-  content: ''; position: absolute; top: -2px; left: 0; width: 42%; height: 2.5px;
-  background: linear-gradient(90deg, transparent, rgba(228, 246, 255, .98), transparent);
-  animation: stratum-shimmer 9s ease-in-out infinite;
+  content: ''; position: absolute; top: -2px; left: 10%; right: 10%; height: 2.5px;
+  background: linear-gradient(90deg, rgba(228, 246, 255, 0.13), rgba(228, 246, 255, 0.22) 50%, rgba(228, 246, 255, 0.13));
+  animation: stratum-seam-breathe 6s ease-in-out infinite;
 }
 .stratum-d1 {
   bottom: 24vh; height: 11vh;
   background: linear-gradient(180deg, rgba(24, 96, 160, .5), rgba(10, 60, 116, .62));
   animation: hero-stratum-drift-1 7s ease-in-out infinite alternate;
 }
-.stratum-d1::after { animation-duration: 5.5s; animation-delay: -1.5s; }
+.stratum-d1::after { animation-duration: 5.2s; animation-delay: -1.5s; }
 .stratum-d2 {
   bottom: 16vh; height: 11vh;
   background: linear-gradient(180deg, rgba(14, 72, 132, .55), rgba(5, 42, 92, .68));
   animation: hero-stratum-drift-2 9.5s ease-in-out infinite alternate-reverse;
 }
-.stratum-d2::after { animation-duration: 7s; animation-delay: -4s; }
+.stratum-d2::after { animation-duration: 6.8s; animation-delay: -4s; }
 .stratum-d3 {
   bottom: 8.5vh; height: 10.5vh;
   background: linear-gradient(180deg, rgba(8, 50, 104, .6), rgba(3, 30, 72, .72));
   animation: hero-stratum-drift-3 12s ease-in-out infinite alternate;
 }
-.stratum-d3::after { animation-duration: 8.5s; animation-delay: -2.5s; }
+.stratum-d3::after { animation-duration: 7.6s; animation-delay: -2.5s; }
 .stratum-d4 {
   bottom: 1.5vh; height: 9.5vh;
   background: linear-gradient(180deg, rgba(4, 34, 80, .66), rgba(2, 20, 54, .78));
   animation: hero-stratum-drift-4 15s ease-in-out infinite alternate-reverse;
 }
-.stratum-d4::after { animation-duration: 10s; animation-delay: -6s; }
-/* 高感知动效层 1 —— 全幅斜向扫光带：一道宽光带每 10s 无停顿掠过整个 hero（linear 循环，
-   两端点都在画面外所以循环无跳变），transform-only；z-index -1 压在地层之上、内容之下。
-   缓移+层界扫光对巨幅渐变带感知太弱（用户两轮反馈"看不到动态特效"），这道全幅扫光是
-   一眼可见的运动主体。 */
-.hero-scan {
-  position: absolute; z-index: -1; inset: -10% -30%; pointer-events: none;
-  background: linear-gradient(105deg, transparent 42%, rgba(190, 232, 255, .24) 50%, rgba(190, 232, 255, .08) 55%, transparent 63%);
-  animation: hero-scan-sweep 10s linear infinite;
-  will-change: transform;
+.stratum-d4::after { animation-duration: 8.4s; animation-delay: -6s; }
+/* 高感知动效层 —— 跃动微粒（已移除原"全幅斜向扫光带"与"层界左→右掠光"）：
+   六条水平轨道自下而上覆盖地层带及上方（34-82vh），每条轨道用多层 radial-gradient 摆出
+   7-10 颗亮点，整条轨道做"起跳—悬停—落回—再起跳"的弹跳 + 明暗闪烁；六组的粒径
+   （2-4.5px）、密度（7-10 颗）、时长（2.8-6.1s）、相位（负延迟）、跳跃幅度
+   （2.4-5.2vh）彼此错开，叠加起来读作地层间断续上涌的矿物/流体颗粒。
+   纯 transform + opacity，完全没有横向扫掠。 */
+.geo-motes {
+  /* 必须用 inset 拉满宽度：.hero-shell 是 flex 列容器，绝对定位子元素仍是 flex item，
+     不写 left/right 时 width 会被压成 0（踩过的坑）。 */
+  position: absolute; z-index: -1; left: 0; right: 0; pointer-events: none;
+  will-change: transform, opacity;
+  background-repeat: no-repeat;
 }
-@keyframes hero-scan-sweep {
-  from { transform: translateX(-55%); }
-  to { transform: translateX(55%); }
-}
-/* 高感知动效层 2 —— 悬浮微粒：3px 亮点（box-shadow 散布在 hero 下三分之二，即地层带
-   附近），两层方向/时长/相位错开缓慢浮游，读作地层间的沉积颗粒。 */
-.geo-motes { position: absolute; z-index: -1; left: 0; top: 0; width: 3px; height: 3px; border-radius: 50%; pointer-events: none; }
+/* 每组一条 16vh 高的"颗粒带"（覆盖某条层界面上下），带内用多层 radial-gradient 摆出
+   7-10 颗不同粒径的亮点，横向位置刻意错开、不成列。整带一起做"起跳—悬停—落回"的弹跳 +
+   明灭，六组的时长/相位/跳跃幅度互不相同（--hy 是本次跳跃的抬升量），叠加后是持续跃动。 */
 .motes-a {
-  box-shadow:
-    6vw 34vh 0 1px rgba(220, 242, 255, .65), 14vw 55vh 0 0 rgba(214, 240, 255, .45),
-    23vw 72vh 0 1px rgba(220, 242, 255, .55), 31vw 44vh 0 0 rgba(214, 240, 255, .42),
-    39vw 63vh 0 1px rgba(220, 242, 255, .6), 47vw 80vh 0 0 rgba(214, 240, 255, .44),
-    55vw 38vh 0 1px rgba(220, 242, 255, .58), 63vw 58vh 0 0 rgba(214, 240, 255, .46),
-    71vw 74vh 0 1px rgba(220, 242, 255, .58), 79vw 47vh 0 0 rgba(214, 240, 255, .42),
-    87vw 66vh 0 1px rgba(220, 242, 255, .55), 93vw 52vh 0 0 rgba(214, 240, 255, .44),
-    18vw 88vh 0 1px rgba(220, 242, 255, .5), 68vw 86vh 0 0 rgba(214, 240, 255, .4);
-  animation: motes-float-a 11s ease-in-out infinite alternate;
+  top: 66vh; height: 16vh;
+  animation: motes-hop 3.4s cubic-bezier(.42, 0, .58, 1) infinite;
+  --hy: -3.4vh;
+  background-image:
+    radial-gradient(5px 5px at 7% 22%, rgba(255, 255, 255, 1), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 17% 78%, rgba(255, 255, 255, .95), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(5px 5px at 27% 34%, rgba(255, 255, 255, 1), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 37% 62%, rgba(255, 255, 255, .92), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(5px 5px at 47% 26%, rgba(255, 255, 255, 1), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 57% 84%, rgba(255, 255, 255, .94), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(5px 5px at 67% 46%, rgba(255, 255, 255, 1), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 77% 70%, rgba(255, 255, 255, .9), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(5px 5px at 87% 30%, rgba(255, 255, 255, .98), rgba(226, 245, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 96% 58%, rgba(255, 255, 255, .93), rgba(226, 245, 255, 0) 100%);
 }
 .motes-b {
-  box-shadow:
-    10vw 47vh 0 0 rgba(200, 230, 255, .5), 20vw 64vh 0 1px rgba(200, 230, 255, .56),
-    28vw 40vh 0 0 rgba(200, 230, 255, .42), 36vw 76vh 0 1px rgba(200, 230, 255, .52),
-    44vw 52vh 0 0 rgba(200, 230, 255, .46), 52vw 70vh 0 1px rgba(200, 230, 255, .58),
-    60vw 42vh 0 0 rgba(200, 230, 255, .44), 69vw 60vh 0 1px rgba(200, 230, 255, .54),
-    77vw 82vh 0 0 rgba(200, 230, 255, .42), 85vw 56vh 0 1px rgba(200, 230, 255, .5),
-    92vw 74vh 0 0 rgba(200, 230, 255, .44), 33vw 88vh 0 1px rgba(200, 230, 255, .48);
-  animation: motes-float-b 14s ease-in-out infinite alternate-reverse;
+  top: 57vh; height: 16vh;
+  animation: motes-hop 4.6s cubic-bezier(.42, 0, .58, 1) infinite -1.1s;
+  --hy: -5.2vh;
+  background-image:
+    radial-gradient(7.2px 7.2px at 11% 30%, rgba(255, 255, 255, .96), rgba(206, 234, 255, 0) 100%),
+    radial-gradient(5.8px 5.8px at 24% 72%, rgba(255, 255, 255, .9), rgba(206, 234, 255, 0) 100%),
+    radial-gradient(7.2px 7.2px at 38% 24%, rgba(255, 255, 255, 1), rgba(206, 234, 255, 0) 100%),
+    radial-gradient(5.8px 5.8px at 52% 64%, rgba(255, 255, 255, .92), rgba(206, 234, 255, 0) 100%),
+    radial-gradient(7.2px 7.2px at 66% 40%, rgba(255, 255, 255, .98), rgba(206, 234, 255, 0) 100%),
+    radial-gradient(5.8px 5.8px at 80% 80%, rgba(255, 255, 255, .9), rgba(206, 234, 255, 0) 100%),
+    radial-gradient(7.2px 7.2px at 92% 52%, rgba(255, 255, 255, .95), rgba(206, 234, 255, 0) 100%);
 }
-@keyframes motes-float-a {
-  from { transform: translate3d(-1.4vw, 1.6vh, 0); }
-  to { transform: translate3d(1.4vw, -1.6vh, 0); }
+.motes-c {
+  top: 76vh; height: 15vh;
+  animation: motes-hop 2.8s cubic-bezier(.42, 0, .58, 1) infinite -.6s;
+  --hy: -2.4vh;
+  background-image:
+    radial-gradient(4.2px 4.2px at 5% 26%, rgba(255, 255, 255, 1), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 14% 76%, rgba(255, 255, 255, .95), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 23% 38%, rgba(255, 255, 255, 1), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 32% 58%, rgba(255, 255, 255, .93), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 41% 20%, rgba(255, 255, 255, .98), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 50% 68%, rgba(255, 255, 255, .95), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 59% 44%, rgba(255, 255, 255, 1), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 68% 82%, rgba(255, 255, 255, .92), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 77% 32%, rgba(255, 255, 255, .97), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 86% 54%, rgba(255, 255, 255, .94), rgba(232, 248, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 94% 74%, rgba(255, 255, 255, 1), rgba(232, 248, 255, 0) 100%);
 }
-@keyframes motes-float-b {
-  from { transform: translate3d(1.1vw, -1.3vh, 0); }
-  to { transform: translate3d(-1.1vw, 1.7vh, 0); }
+.motes-d {
+  top: 47vh; height: 15vh;
+  animation: motes-hop 5.2s cubic-bezier(.42, 0, .58, 1) infinite -2.4s;
+  --hy: -4.4vh;
+  background-image:
+    radial-gradient(5.8px 5.8px at 9% 34%, rgba(255, 255, 255, .98), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5px 5px at 21% 66%, rgba(255, 255, 255, .92), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5.8px 5.8px at 33% 22%, rgba(255, 255, 255, 1), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5px 5px at 45% 78%, rgba(255, 255, 255, .9), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5.8px 5.8px at 57% 46%, rgba(255, 255, 255, .96), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5px 5px at 69% 58%, rgba(255, 255, 255, .94), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5.8px 5.8px at 81% 28%, rgba(255, 255, 255, .99), rgba(214, 240, 255, 0) 100%),
+    radial-gradient(5px 5px at 90% 84%, rgba(255, 255, 255, .91), rgba(214, 240, 255, 0) 100%);
+}
+.motes-e {
+  top: 38vh; height: 15vh;
+  animation: motes-hop 3.9s cubic-bezier(.42, 0, .58, 1) infinite -3.1s;
+  --hy: -2.8vh;
+  background-image:
+    radial-gradient(4.2px 4.2px at 6% 24%, rgba(255, 255, 255, .96), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 16% 70%, rgba(255, 255, 255, .9), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 26% 42%, rgba(255, 255, 255, .99), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 36% 60%, rgba(255, 255, 255, .92), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 46% 18%, rgba(255, 255, 255, .97), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 55% 74%, rgba(255, 255, 255, .94), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 64% 36%, rgba(255, 255, 255, 1), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 73% 56%, rgba(255, 255, 255, .91), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 82% 80%, rgba(255, 255, 255, .98), rgba(228, 246, 255, 0) 100%),
+    radial-gradient(3.4px 3.4px at 91% 28%, rgba(255, 255, 255, .93), rgba(228, 246, 255, 0) 100%);
+}
+.motes-f {
+  top: 29vh; height: 15vh;
+  animation: motes-hop 6.1s cubic-bezier(.42, 0, .58, 1) infinite -1.8s;
+  --hy: -3.9vh;
+  background-image:
+    radial-gradient(5px 5px at 12% 20%, rgba(255, 255, 255, .93), rgba(200, 232, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 25% 64%, rgba(255, 255, 255, .88), rgba(200, 232, 255, 0) 100%),
+    radial-gradient(5px 5px at 39% 36%, rgba(255, 255, 255, .97), rgba(200, 232, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 53% 76%, rgba(255, 255, 255, .9), rgba(200, 232, 255, 0) 100%),
+    radial-gradient(5px 5px at 67% 46%, rgba(255, 255, 255, .95), rgba(200, 232, 255, 0) 100%),
+    radial-gradient(4.2px 4.2px at 81% 24%, rgba(255, 255, 255, .89), rgba(200, 232, 255, 0) 100%),
+    radial-gradient(5px 5px at 93% 58%, rgba(255, 255, 255, .94), rgba(200, 232, 255, 0) 100%);
+}
+/* 跃动：纵向弹跳为主（向上 2.4-5.2vh），水平只有 .4-1.1vw 的轻微漂移，绝不横向扫掠。
+   关键帧只描述"一次次起跳"的轨迹，各组的时长/相位差异让六条颗粒带错拍，读起来是持续跃动
+   而不是整齐的呼吸。 */
+@keyframes motes-hop {
+  0% { transform: translate3d(0, 0, 0); opacity: .5; }
+  14% { transform: translate3d(.4vw, calc(var(--hy) * .55), 0); opacity: 1; }
+  30% { transform: translate3d(.8vw, var(--hy), 0); opacity: 1; }
+  46% { transform: translate3d(.9vw, calc(var(--hy) * .2), 0); opacity: .58; }
+  62% { transform: translate3d(1.1vw, calc(var(--hy) * .7), 0); opacity: 1; }
+  80% { transform: translate3d(.5vw, calc(var(--hy) * .12), 0); opacity: .68; }
+  100% { transform: translate3d(0, 0, 0); opacity: .5; }
 }
 @keyframes hero-aurora-drift {
   from { transform: translate3d(0, 0, 0) scale(1); }
@@ -655,12 +726,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   from { transform: rotate(2.4deg) translateX(2.8vw); }
   to { transform: rotate(2.4deg) translateX(-2.8vw); }
 }
-/* 层界扫光：亮锋沿界面从左掠到右后淡出重来，各层时长/相位错开 */
-@keyframes stratum-shimmer {
-  0% { transform: translateX(-60%); opacity: 0; }
-  18% { opacity: 1; }
-  82% { opacity: 1; }
-  100% { transform: translateX(330%); opacity: 0; }
+/* 层界呼吸：界面亮线只做明暗起伏（无位移、无横向掠光），各层时长/相位错开 */
+@keyframes stratum-seam-breathe {
+  0% { opacity: .32; }
+  50% { opacity: 1; }
+  100% { opacity: .32; }
 }
 @keyframes hero-ring-breathe {
   from { transform: scale(1); opacity: .55; }
@@ -671,8 +741,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   to { transform: scale(1.05); opacity: .6; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-shell::before, .topographic-lines, .hero-aurora, .geo-stratum, .hero-scan, .geo-motes { animation: none; }
-  .geo-stratum::after { animation: none; opacity: 0; }
+  .hero-shell::before, .topographic-lines, .hero-aurora, .geo-stratum, .geo-motes { animation: none; }
+  .geo-stratum::after { animation: none; opacity: .7; }
+  .geo-motes { opacity: .55; }
 }
 
 
@@ -684,7 +755,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @media (min-width: 761px) {
   .site-header.is-condensed {
     background: rgba(17, 86, 154, .86);
-    border-bottom-color: rgba(226, 239, 255, .16);
+    border-bottom-color: rgba(226, 239, 255, 0.31);
     box-shadow: 0 10px 24px rgba(6, 34, 66, .2);
     backdrop-filter: blur(16px);
   }
@@ -718,13 +789,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
      screen had only 41px of slack. These values push that edge out to 1516px, which is what lets
      every group keep all three labels on a normal desktop instead of falling back to two. */
   .nav-inline-links { display: flex; align-items: start; justify-content: center; gap: clamp(7px, .62vw, 12px); padding: 8px 10px 0; }
-  .nav-inline-links button { padding: 0; color: rgba(222, 241, 255, .8); background: transparent; border: 0; font-size: clamp(11px, .72vw, 14px); font-weight: 700; line-height: 1.55; white-space: nowrap; transition: color 180ms ease, transform 180ms ease; }
+  .nav-inline-links button { padding: 0; color: rgba(222, 241, 255, 0.22); background: transparent; border: 0; font-size: clamp(11px, .72vw, 14px); font-weight: 700; line-height: 1.55; white-space: nowrap; transition: color 180ms ease, transform 180ms ease; }
   .nav-inline-links button:hover, .nav-inline-links button:focus-visible { color: #fff; outline: 0; transform: translateY(-1px); }
   .site-header.is-condensed .nav-group-primary { padding-top: 0; }
 }
 @media (max-width: 760px) {
   .nav-inline-links { display: flex; justify-content: center; gap: 3px; padding-top: 1px; }
-  .nav-inline-links button { padding: 0; color: rgba(231, 245, 255, .82); background: transparent; border: 0; font-size: 3px; line-height: 1.25; white-space: nowrap; }
+  .nav-inline-links button { padding: 0; color: rgba(231, 245, 255, 1.00); background: transparent; border: 0; font-size: 3px; line-height: 1.25; white-space: nowrap; }
 }
 
 /* Homepage deck — every module owns exactly one screen (PPT-style paging). */

@@ -34,7 +34,9 @@ RUN set -ex \
     && sed -i 's|security.debian.org/debian-security|mirrors.tuna.tsinghua.edu.cn/debian-security|g' /etc/apt/sources.list.d/debian.sources \
     # (C) 安装必要的系统库
     && apt-get update \
-    && packages="curl git libpq5" \
+    # libgl1/libglib2.0-0/libxcb1/libxrender1：opencv(rapidocr 依赖) 运行时所需的系统库，
+    # 缺失时 `import cv2` 会报 libxcb.so.1 / libGL.so.1 not found，导致 pytest 收集阶段即失败
+    && packages="curl git libpq5 libgl1 libglib2.0-0 libxcb1 libxrender1" \
     && if [ "$INSTALL_MEDIA_TOOLS" = "true" ]; then packages="$packages ffmpeg fonts-liberation fonts-noto-cjk libsm6 libxext6"; fi \
     && if [ "$INSTALL_DOCUMENT_CONVERTERS" = "true" ]; then packages="$packages libreoffice-calc-nogui libreoffice-impress-nogui libreoffice-writer-nogui"; fi \
     && apt-get install -y --no-install-recommends --fix-missing $packages \

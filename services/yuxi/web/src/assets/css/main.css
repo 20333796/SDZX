@@ -27,10 +27,158 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Roboto', 'HarmonyOS Sans SC', 'Segoe UI',
     'Helvetica Neue', Arial, sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body.is-resizing-sidebar,
+body.is-resizing-sidebar * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* 两侧工作区面板采用独立的可读字号，避免窄栏中的 11/12px 文本难以辨认。 */
+.header .nav-item,
+.header .nav-item .nav-text {
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+}
+
+.sidebar-conversations .history-label,
+.sidebar-conversations .project-toggle,
+.sidebar-conversations .conversation-select {
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+}
+
+.sidebar-conversations .project-empty,
+.sidebar-conversations .list-state,
+.sidebar-conversations .load-more-btn {
+  font-size: 14px !important;
+}
+
+#agent-file-panel,
+#agent-file-panel .side-panel__body,
+#agent-file-panel .file-section,
+#agent-file-panel .subagent-section,
+#agent-file-panel .message-debug-section {
+  font-size: 15px;
+}
+
+#agent-file-panel .side-panel__header,
+#agent-file-panel .side-panel__title,
+#agent-file-panel .tree-toolbar,
+#agent-file-panel .tree-scope-tab,
+#agent-file-panel .section-tab-main > span,
+#agent-file-panel .preview-tab-name,
+#agent-file-panel .tree-node-name {
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+}
+
+#agent-file-panel .preview-empty,
+#agent-file-panel .preview-empty-title,
+#agent-file-panel .preview-empty-desc,
+#agent-file-panel .empty,
+#agent-file-panel .file-meta,
+#agent-file-panel .file-size,
+#agent-file-panel .file-time {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* 回答正文：Markdown 默认 0.9rem 在大屏上偏小，统一提升到 16px。 */
+.chat-container .yk-markdown-preview,
+.chat-container .flat-md-preview.yk-markdown-preview {
+  font-size: 1rem !important;
+  line-height: 1.8 !important;
+}
+
+.chat-container .yk-markdown-preview h1,
+.chat-container .yk-markdown-preview h2 {
+  font-size: 1.2rem !important;
+  line-height: 1.45 !important;
+}
+
+.chat-container .yk-markdown-preview h3,
+.chat-container .yk-markdown-preview h4 {
+  font-size: 1.1rem !important;
+  line-height: 1.5 !important;
+}
+
+.chat-container .yk-markdown-preview h5,
+.chat-container .yk-markdown-preview h6,
+.chat-container .yk-markdown-preview code,
+.chat-container .yk-markdown-preview pre.shiki {
+  font-size: 0.95rem !important;
+}
+
+.chat-container .yk-markdown-preview cite {
+  font-size: 0.9rem !important;
+}
+
+/* 检索与资源面板：来源名称、检索记录和可点击链接保持清晰可读。 */
+.chat-container .retrieval-panel,
+.chat-container .retrieval-panel__title,
+.chat-container .retrieval-panel .retrieval-section__title,
+.chat-container .retrieval-panel .record-card__query,
+.chat-container .retrieval-panel .record-hit,
+.chat-container .retrieval-panel .browse-title,
+.chat-container .retrieval-panel .browse-loading {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
+.chat-container .retrieval-panel .record-card__kind,
+.chat-container .retrieval-panel .record-card__time,
+.chat-container .retrieval-panel .retrieval-empty {
+  font-size: 14px !important;
+}
+
+.chat-container .retrieval-panel .record-hit__label {
+  font-size: 15px !important;
+}
+
+.chat-container .source-section .section-title,
+.chat-container .kb-result-grouped-list .file-name,
+.chat-container .kb-result-grouped-list .no-results,
+.chat-container .kb-result-grouped-list .result-summary,
+.chat-container .web-search-result-list .result-title,
+.chat-container .web-search-result-list .result-snippet,
+.chat-container .web-search-result-list .no-results {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+
+.chat-container .kb-result-grouped-list .chunk-count,
+.chat-container .refs,
+.chat-container .refs .item {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* 工作台可读性基线：聊天正文和控件保持舒适的桌面阅读字号。 */
+.chat-container,
+.agent-view,
+.workspace-view {
+  font-size: 16px;
+}
+
+.chat-container .message-text,
+.chat-container .message-md,
+.chat-container .message-input,
+.chat-container textarea,
+.chat-container input {
+  font-size: 16px;
+}
+
+.chat-container .conversation-time,
+.chat-container .chat-inline-notice,
+.chat-container .generating-text,
+.chat-container .queued-request-row {
+  font-size: 14px;
 }
 
 /* layout */

@@ -9,6 +9,7 @@ import {
 } from '@lucide/vue'
 import { fallbackPortalConfig } from '@/config/portal'
 import { destinationForTarget } from '@/config/destinations'
+import { buildGeoChatAgentUrl } from '@/config/geochat'
 import type { PortalConfig, PortalNavigationLink } from '@/types'
 import { router } from '@/router'
 import { session } from '@/session'
@@ -47,6 +48,10 @@ const slides = [
 function goToSlide(target: string) {
   menuOpen.value = false
   document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function openGeoChat() {
+  window.location.assign(buildGeoChatAgentUrl())
 }
 
 function navigate(link: PortalNavigationLink) {
@@ -125,12 +130,15 @@ onBeforeUnmount(() => {
         <div class="geo-stratum stratum-d2" aria-hidden="true"></div>
         <div class="geo-stratum stratum-d3" aria-hidden="true"></div>
         <div class="geo-stratum stratum-d4" aria-hidden="true"></div>
-        <!-- 高感知动效层：全幅斜向扫光带（10s 掠过整个 hero）+ 两层悬浮微粒（沉积颗粒在
-             层带间缓慢浮游，方向/相位错开）。此前的缓移+扫光对巨幅渐变带来说感知太弱
-             （用户反馈"还是没有动态特效"），这两层给出一眼可见的运动。 -->
-        <div class="hero-scan" aria-hidden="true"></div>
+        <!-- 高感知动效层：六组跃动微粒（沉积颗粒/矿物晶体在层带间断续起跳、悬停、落回，
+             粒径/密度/时长/相位/跳跃幅度彼此错开，配合明暗闪烁）。原先的"全幅斜向扫光 +
+             层界左→右掠光"按用户要求移除，横向扫掠一律取消，运动感改由粒子的纵向跃动承担。 -->
         <div class="geo-motes motes-a" aria-hidden="true"></div>
         <div class="geo-motes motes-b" aria-hidden="true"></div>
+        <div class="geo-motes motes-c" aria-hidden="true"></div>
+        <div class="geo-motes motes-d" aria-hidden="true"></div>
+        <div class="geo-motes motes-e" aria-hidden="true"></div>
+        <div class="geo-motes motes-f" aria-hidden="true"></div>
 
         <header :class="['site-header', { 'is-condensed': headerCondensed }]">
           <a class="brand" href="#top" aria-label="返回首页">
@@ -226,7 +234,7 @@ onBeforeUnmount(() => {
          chip would otherwise hang over 课程图谱 and 能力图谱 too. `activeSlide` is the very value the
          right-hand pager follows, so the two appear and disappear together. -->
     <Transition name="corner-entry">
-      <button v-if="activeSlide === 'slide-home'" class="ai-center-entry" @click="router.push({ name: 'assistant' })"><Sparkles :size="18" />AI应用中心 <ChevronRight :size="18" /></button>
+      <button v-if="activeSlide === 'slide-home'" class="ai-center-entry" @click="openGeoChat"><Sparkles :size="18" />AI应用中心 <ChevronRight :size="18" /></button>
     </Transition>
 
     <nav class="deck-nav" aria-label="首页分页">

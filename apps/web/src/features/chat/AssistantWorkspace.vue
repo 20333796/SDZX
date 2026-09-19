@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ChevronDown, Compass, Layers3, LoaderCircle, Search, SendHorizontal, Sparkles } from '@lucide/vue'
-import type { Citation } from '@/types'
+import type { ChatResourceReference, Citation } from '@/types'
+import { buildGeoChatAgentUrl } from '@/config/geochat'
 
 type ChatMode = 'conversation' | 'search' | 'inquiry'
-type ChatMessage = { role: 'assistant' | 'user'; content: string; citations?: Citation[] }
+type ChatMessage = { role: 'assistant' | 'user'; content: string; citations?: Citation[]; resources?: ChatResourceReference[] }
 
 const props = withDefaults(defineProps<{
   landing?: boolean
@@ -18,8 +18,6 @@ const props = withDefaults(defineProps<{
   initialPrompt: '',
   initialMode: 'conversation'
 })
-
-const router = useRouter()
 
 const mode = ref<ChatMode>(props.initialMode)
 const prompt = ref('')
@@ -62,7 +60,7 @@ async function sendQuestion() {
   if (!question || loading.value) return
 
   if (props.landing) {
-    await router.push({ name: 'assistant', query: { q: question, mode: mode.value } })
+    window.location.assign(buildGeoChatAgentUrl(question, mode.value))
     return
   }
 
@@ -94,9 +92,10 @@ async function sendQuestion() {
         const dataLine = event.split('\n').find((line) => line.startsWith('data: '))
         if (!dataLine) return
         const eventName = event.split('\n').find((line) => line.startsWith('event: '))?.slice(7)
-        const payload = JSON.parse(dataLine.slice(6)) as { content?: string; citations?: Citation[] }
+        const payload = JSON.parse(dataLine.slice(6)) as { content?: string; citations?: Citation[]; resources?: ChatResourceReference[] }
         if (payload.content) answer.content += payload.content
         if (eventName === 'sources' && payload.citations) answer.citations = payload.citations
+        if (eventName === 'resources' && payload.resources) answer.resources = payload.resources
       })
       void scrollAnswers()
     }
@@ -137,6 +136,9 @@ onMounted(() => {
           <ul v-if="showSources && message.citations?.length" class="assistant-sources">
             <li v-for="citation in message.citations" :key="`${citation.document_id}-${citation.source_locator}`">{{ citation.title }}{{ citation.source_locator ? ` · ${citation.source_locator}` : '' }}</li>
           </ul>
+          <ul v-if="message.resources?.length" class="assistant-resources">
+            <li v-for="resource in message.resources" :key="resource.id"><a v-if="resource.route" :href="resource.route">{{ resource.title }}</a><span v-else>{{ resource.title }}</span><small>{{ resource.category === 'practice' ? '虚拟仿真' : resource.category === 'mentor' ? '导师图谱' : '课程' }}</small></li>
+          </ul>
         </article>
       </template>
     </div>
@@ -157,6 +159,7 @@ onMounted(() => {
 .assistant-tools { position: absolute; z-index: 2; bottom: 47px; left: 49px; display: flex; flex-wrap: wrap; gap: 10px; }.assistant-tools button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; color: #9ba8b5; background: rgba(247, 249, 252, .72); border: 0; border-radius: 16px; font-size: 12px; font-weight: 700; transition: color .18s ease, background .18s ease, transform .18s ease; }.assistant-tools button:hover, .assistant-tools button.active { color: #1573f4; background: #e6f4ff; transform: translateY(-1px); }.assistant-tools button.active { box-shadow: 0 4px 12px rgba(10, 104, 255, .15); }
 .assistant-answer-area { min-height: 0; max-height: 120px; margin: 0 10px 7px; padding: 0 6px; overflow: auto; scrollbar-width: thin; }.assistant-workspace:not(.has-messages) .assistant-answer-area { display: none; }.assistant-message { width: fit-content; max-width: 87%; margin: 0 0 10px; padding: 9px 13px; border-radius: 12px; font-size: 13px; line-height: 1.65; animation: message-in .24s ease-out both; }.assistant-message p { margin: 0; white-space: pre-wrap; }.assistant-message.assistant { color: #22324a; background: #eff7ff; border-bottom-left-radius: 4px; }.assistant-message.user { margin-left: auto; color: #fff; background: #1674ef; border-bottom-right-radius: 4px; font-weight: 600; }.assistant-thinking { display: inline-flex; align-items: center; gap: 7px; color: #dbeeff; }.assistant-thinking svg { animation: spin .8s linear infinite; }.typing-dots::after { content: "..."; display: inline-block; width: 16px; overflow: hidden; vertical-align: bottom; animation: dots 1.2s steps(4, end) infinite; }
 .sources-toggle { display: inline-flex; align-items: center; gap: 3px; margin-top: 9px; padding: 0; color: #095a9c; background: transparent; border: 0; font-size: 12px; }.sources-toggle svg { transition: transform .2s ease; }.sources-toggle svg.flipped { transform: rotate(180deg); }.assistant-sources { display: grid; gap: 5px; margin: 9px 0 0; padding: 9px 0 0 17px; color: #5f6170; border-top: 1px solid #d9e9f6; font-size: 12px; }
+.assistant-resources { display: grid; gap: 5px; margin: 9px 0 0; padding: 9px 0 0 17px; color: #31546c; border-top: 1px solid #d9e9f6; font-size: 12px; }.assistant-resources li { display: flex; align-items: center; gap: 7px; }.assistant-resources a { color: #0871ba; font-weight: 700; text-decoration: none; }.assistant-resources small { color: #7a8d9c; }
 .assistant-composer { min-height: 178px; padding: 21px 22px 18px; background: #fff; border: 0; border-radius: 33px; transition: box-shadow .2s ease, transform .2s ease; }.assistant-workspace:not(.has-messages) .assistant-composer { position: absolute; right: 29px; bottom: 28px; left: 29px; }.assistant-composer.focused { box-shadow: 0 0 0 3px rgba(121, 193, 255, .54), 0 12px 28px rgba(2, 21, 66, .18); transform: translateY(-2px); }.assistant-composer textarea { display: block; width: 100%; min-height: 72px; padding: 0; resize: none; color: #26384e; background: transparent; border: 0; outline: 0; font: inherit; font-size: 18px; line-height: 1.6; }.assistant-composer textarea::placeholder { color: #a4a9b1; }.composer-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; color: #9899a2; font-size: 11px; }.composer-footer > span { display: none; }.composer-footer button { display: inline-flex; align-items: center; gap: 7px; padding: 15px 29px; color: #fff; background: #1477f5; border: 0; border-radius: 28px; font-size: 17px; font-weight: 700; transition: transform .16s ease, opacity .16s ease, background .16s ease; }.composer-footer button:not(:disabled):hover { background: #0563dc; transform: translateY(-2px); }.composer-footer button:disabled { opacity: .45; cursor: not-allowed; }
 .assistant-workspace.has-messages .assistant-tools { display: none; }.assistant-workspace.has-messages .assistant-answer-area { position: absolute; top: 74px; right: 29px; bottom: 142px; left: 29px; max-height: none; margin: 0; }.assistant-workspace.has-messages .assistant-composer { position: absolute; right: 29px; bottom: 20px; left: 29px; min-height: 112px; padding: 12px 16px; border-radius: 24px; }.assistant-workspace.has-messages .assistant-composer textarea { min-height: 44px; font-size: 14px; }.assistant-workspace.has-messages .composer-footer button { padding: 9px 18px; font-size: 14px; }
 .assistant-workspace.standalone { min-height: 560px; height: min(70vh, 720px); background: rgba(8, 46, 94, .84); }.assistant-workspace.standalone .assistant-intro { justify-content: flex-start; padding-left: 110px; }.assistant-workspace.standalone .assistant-avatar { left: 48px; }.assistant-workspace.standalone.has-messages .assistant-answer-area { top: 104px; bottom: 190px; }.assistant-workspace.standalone.has-messages .assistant-composer { bottom: 30px; min-height: 142px; padding: 17px 20px; }.assistant-workspace.standalone.has-messages .assistant-composer textarea { min-height: 62px; font-size: 16px; }.assistant-workspace.standalone.has-messages .composer-footer button { padding: 12px 22px; font-size: 15px; }

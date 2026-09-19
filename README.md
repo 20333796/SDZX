@@ -89,6 +89,8 @@ Windows 使用 `scripts/start-platform.ps1`：
 
 门户 API 容器启动时自动执行 Alembic。GeoChat storage-migrator 当前执行业务 schema v7 → v8，新增 `users.account_type`，历史用户默认为学生身份。详见 [`docs/MIGRATION.md`](docs/MIGRATION.md) 和 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)。
 
+首次部署并创建 GeoChat 管理员后，可按部署指南运行一次性 Docker 导入器，将仓库内的全校导师、课程、虚拟仿真和官网链接建立为可检索知识库。仓库保存可重复恢复的业务种子与配置模板；包含账号、会话和密钥的本机数据库卷不进入 Git。
+
 代码规范、测试命令和提交要求见 [`AGENTS.md`](AGENTS.md)。
 
 ## 安全说明

@@ -9,7 +9,7 @@ from app.database import get_db
 from app.config import get_settings
 from app.schemas import ChatRequest
 from app.services.llm import generate_grounded_answer
-from app.services.retrieval import search_published_knowledge
+from app.services.retrieval import search_portal_resources, search_published_knowledge
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -28,11 +28,13 @@ def build_reply(request: ChatRequest, has_citations: bool = False) -> str:
 async def stream_chat(request: ChatRequest, session: Session = Depends(get_db)) -> StreamingResponse:
     async def event_source():
         citations = search_published_knowledge(session, request.message)
+        resources = search_portal_resources(session, request.message)
         reply = await generate_grounded_answer(get_settings(), request, citations)
         for token in reply:
             yield f"event: token\ndata: {json.dumps({'content': token}, ensure_ascii=False)}\n\n"
             await asyncio.sleep(0.012)
         yield f"event: sources\ndata: {json.dumps({'citations': [citation.model_dump() for citation in citations]}, ensure_ascii=False)}\n\n"
+        yield f"event: resources\ndata: {json.dumps({'resources': [resource.model_dump() for resource in resources]}, ensure_ascii=False)}\n\n"
         yield "event: complete\ndata: {}\n\n"
 
     return StreamingResponse(event_source(), media_type="text/event-stream")

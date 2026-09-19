@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useUserStore } from '@/stores/user'
 import { renderMarkdown } from '@/utils/markdown_preview'
@@ -34,6 +34,8 @@ const props = defineProps({
 
 const themeStore = useThemeStore()
 const userStore = useUserStore()
+// 由 AgentChatComponent provide：消息外链接入检索面板内嵌打开；其他使用场景无 provider 时走新窗口兜底
+const openExternalLinkInPanel = inject('openExternalLinkInPanel', null)
 const shikiTheme = computed(() => (themeStore.isDark ? 'github-dark' : 'github-light'))
 const previewRef = ref(null)
 const copiedTimers = new WeakMap()
@@ -404,6 +406,21 @@ watch(
 const handleMarkdownAction = async (e) => {
   const target = e.target instanceof Element ? e.target : e.target?.parentElement
   if (!target) return
+
+  // 消息正文里的外部链接：默认接入检索面板内嵌打开（无面板回调时新窗口打开），
+  // 不再整页跳转；带修饰键（Ctrl/Cmd/Shift）或非左键时保留浏览器默认行为。
+  const anchor = target.closest('a[href]')
+  if (anchor && (e.button === 0 || e.button === undefined)) {
+    const href = anchor.getAttribute('href') || ''
+    if (/^https?:\/\//i.test(href)) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.defaultPrevented) return
+      e.preventDefault()
+      const label = (anchor.textContent || '').trim().slice(0, 120)
+      if (openExternalLinkInPanel) openExternalLinkInPanel(href, label)
+      else window.open(href, '_blank', 'noopener,noreferrer')
+      return
+    }
+  }
 
   const codeCopyBtn = target.closest('.markdown-code-copy-btn')
   if (codeCopyBtn) {

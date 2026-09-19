@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { ExternalLink } from '@lucide/vue'
 import { fallbackResources } from '@/config/resources'
 import { resourceCover, resourceIcon } from '@/config/resourceIcons'
 import DestinationView from '@/features/portal/DestinationView.vue'
 
 // 本页只列课程家族；实践资源在 /practice/simulation，学科知识图谱是独立页面。
-const resources = computed(() => fallbackResources.filter((resource) => resource.category === 'courses'))
+const route = useRoute()
+const resources = computed(() => {
+  const keyword = typeof route.query.q === 'string' ? route.query.q.trim().toLowerCase() : ''
+  return fallbackResources
+    .filter((resource) => resource.category === 'courses')
+    .filter((resource) => !keyword || `${resource.title} ${resource.provider} ${resource.description}`.toLowerCase().includes(keyword))
+})
 </script>
 
 <template>

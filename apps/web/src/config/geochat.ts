@@ -5,17 +5,22 @@ export function getGeoChatUrl() {
 }
 
 export function buildGeoChatAgentUrl(question = '', mode = 'conversation') {
-  const url = new URL('agent', `${getGeoChatUrl()}/`)
-  if (question.trim()) url.searchParams.set('portal_question', question.trim())
-  if (mode.trim()) url.searchParams.set('portal_mode', mode.trim())
-  url.searchParams.set('portal_return', window.location.origin)
+  // 保留对外约定的 GeoChat 地址，但由门户路由承载新版智能问答。
+  // 登录仍使用 getGeoChatUrl()，避免把认证请求混入问答页面。
+  const url = new URL('/geochat/agent', window.location.origin)
+  if (question.trim()) url.searchParams.set('q', question.trim())
+  if (mode.trim()) url.searchParams.set('mode', mode.trim())
   return url.toString()
 }
 
 export function buildGeoChatLoginUrl(returnPath = '/') {
   const portalReturn = new URL(returnPath, window.location.origin)
   const url = new URL('login', `${getGeoChatUrl()}/`)
-  url.searchParams.set('portal_return', portalReturn.toString())
+  // Never send the portal's former assistant route as the post-login destination. That route is
+  // only a compatibility bridge now; GeoChat's own login should land in its working interface.
+  if (!portalReturn.pathname.startsWith('/assistant') && !portalReturn.pathname.startsWith('/geochat')) {
+    url.searchParams.set('portal_return', portalReturn.toString())
+  }
   return url.toString()
 }
 
@@ -23,6 +28,8 @@ export function buildGeoChatRegistrationUrl(returnPath = '/') {
   const portalReturn = new URL(returnPath, window.location.origin)
   const url = new URL('login', `${getGeoChatUrl()}/`)
   url.searchParams.set('mode', 'register')
-  url.searchParams.set('portal_return', portalReturn.toString())
+  if (!portalReturn.pathname.startsWith('/assistant') && !portalReturn.pathname.startsWith('/geochat')) {
+    url.searchParams.set('portal_return', portalReturn.toString())
+  }
   return url.toString()
 }

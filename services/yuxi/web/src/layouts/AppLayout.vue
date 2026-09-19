@@ -52,6 +52,10 @@ const showSettingsModal = ref(false)
 const settingsInitialTab = ref('')
 
 const { sidebarCollapsed } = storeToRefs(chatUIStore)
+const sidebarWidth = ref(Number(localStorage.getItem('yuxi-sidebar-width')) || 246)
+const isResizingSidebar = ref(false)
+let sidebarResizeStartX = 0
+let sidebarResizeStartWidth = 246
 const conversationSearchOpen = ref(false)
 const projectPendingId = ref(null)
 
@@ -124,6 +128,7 @@ onUnmounted(() => {
     clearInterval(threadStatusSyncTimer)
     threadStatusSyncTimer = null
   }
+  stopSidebarResize()
 })
 
 const route = useRoute()
@@ -197,6 +202,34 @@ const isNavItemActive = (item) => {
 
 const setSidebarCollapsed = (collapsed) => {
   sidebarCollapsed.value = collapsed
+}
+
+const handleSidebarResizeMove = (event) => {
+  if (!isResizingSidebar.value || sidebarCollapsed.value) return
+  sidebarWidth.value = Math.min(
+    380,
+    Math.max(190, sidebarResizeStartWidth + event.clientX - sidebarResizeStartX)
+  )
+}
+
+const stopSidebarResize = () => {
+  if (!isResizingSidebar.value) return
+  isResizingSidebar.value = false
+  document.body.classList.remove('is-resizing-sidebar')
+  window.removeEventListener('pointermove', handleSidebarResizeMove)
+  window.removeEventListener('pointerup', stopSidebarResize)
+  localStorage.setItem('yuxi-sidebar-width', String(Math.round(sidebarWidth.value)))
+}
+
+const startSidebarResize = (event) => {
+  if (sidebarCollapsed.value) return
+  event.preventDefault()
+  isResizingSidebar.value = true
+  sidebarResizeStartX = event.clientX
+  sidebarResizeStartWidth = sidebarWidth.value
+  document.body.classList.add('is-resizing-sidebar')
+  window.addEventListener('pointermove', handleSidebarResizeMove)
+  window.addEventListener('pointerup', stopSidebarResize)
 }
 
 const toggleSidebar = () => {
@@ -346,7 +379,11 @@ provide('settingsModal', {
 
 <template>
   <div class="app-layout" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-    <div class="header">
+    <div
+      class="header"
+      :class="{ 'is-resizing': isResizingSidebar }"
+      :style="sidebarCollapsed ? undefined : { width: `${sidebarWidth}px`, flexBasis: `${sidebarWidth}px` }"
+    >
       <div class="sidebar-brand" @click.stop>
         <router-link v-if="!sidebarCollapsed" to="/" class="brand-link">
           <img :src="infoStore.organization.avatar" class="brand-avatar" />
@@ -465,7 +502,7 @@ provide('settingsModal', {
         <a class="portal-return-link" :href="portalLink('/')">返回深地智学门户</a>
         <!-- 用户信息组件 -->
         <div class="nav-item user-info" @click.stop>
-          <UserInfoComponent :show-role="!sidebarCollapsed">
+      <UserInfoComponent :show-role="!sidebarCollapsed">
             <template v-if="userStore.isAdmin" #actions>
               <a-tooltip placement="top" title="任务中心">
                 <button
@@ -486,8 +523,16 @@ provide('settingsModal', {
                 </button>
               </a-tooltip>
             </template>
-          </UserInfoComponent>
-        </div>
+      </UserInfoComponent>
+      <div
+        v-if="!sidebarCollapsed"
+        class="sidebar-resize-handle"
+        role="separator"
+        aria-label="调整左侧面板宽度"
+        aria-orientation="vertical"
+        @pointerdown="startSidebarResize"
+      />
+    </div>
       </div>
     </div>
     <router-view v-slot="{ Component, route }" id="app-router-view">
@@ -521,16 +566,16 @@ provide('settingsModal', {
 
 <style lang="less" scoped>
 // Less 变量定义
-@sidebar-width: 230px;
+@sidebar-width: 246px;
 @sidebar-collapsed-width: 56px;
 @sidebar-padding-y: 6px;
 @sidebar-padding-x: 8px;
 @sidebar-padding: @sidebar-padding-y @sidebar-padding-x;
 @sidebar-border-width: 1px;
-@sidebar-item-height: 32px;
+@sidebar-item-height: 36px;
 @sidebar-item-padding-x: 10px;
 @sidebar-icon-size: 16px;
-@brand-avatar-size: 28px;
+@brand-avatar-size: 34px;
 @sidebar-collapsed-content-width: @sidebar-collapsed-width - (2 * @sidebar-padding-x) -
   @sidebar-border-width;
 @sidebar-collapsed-icon-padding-x: (
@@ -595,6 +640,38 @@ div.header,
     width 0.18s ease,
     flex-basis 0.18s ease;
 
+  &.is-resizing {
+    transition: none;
+  }
+
+  .sidebar-resize-handle {
+    position: absolute;
+    z-index: 5;
+    top: 0;
+    right: -4px;
+    bottom: 0;
+    width: 8px;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .sidebar-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 18%;
+    right: 3px;
+    bottom: 18%;
+    width: 2px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background-color 0.15s ease;
+  }
+
+  .sidebar-resize-handle:hover::after,
+  &.is-resizing .sidebar-resize-handle::after {
+    background: var(--main-400);
+  }
+
   .nav {
     display: flex;
     flex: 0 0 auto;
@@ -657,8 +734,10 @@ div.header,
     flex: 0 0 @brand-avatar-size;
     width: @brand-avatar-size;
     height: @brand-avatar-size;
+    padding: 2px;
     border-radius: 6px;
-    object-fit: cover;
+    background: var(--gray-0);
+    object-fit: contain;
   }
 
   .brand-name {
@@ -666,7 +745,7 @@ div.header,
     margin-left: 10px;
     overflow: hidden;
     color: var(--gray-1000);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 650;
     line-height: 20px;
     text-overflow: ellipsis;

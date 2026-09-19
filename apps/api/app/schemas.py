@@ -103,6 +103,19 @@ class Citation(BaseModel):
     score: float
 
 
+class ChatResourceReference(BaseModel):
+    """A portal resource surfaced alongside an answer."""
+
+    id: str
+    title: str
+    category: Literal["courses", "practice", "mentor"]
+    provider: str | None = None
+    description: str
+    url: str | None = None
+    embedded_url: str | None = None
+    route: str | None = None
+
+
 class KnowledgeSearchResponse(BaseModel):
     citations: list[Citation]
 

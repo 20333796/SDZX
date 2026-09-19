@@ -13,6 +13,7 @@ apps/api/var/
 .DS_Store
 .playwright-cli/
 output/
+backups/
 var/
 services/yuxi/.env
 services/yuxi/docker/volumes/

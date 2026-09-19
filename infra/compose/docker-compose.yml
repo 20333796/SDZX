@@ -109,6 +109,26 @@ services:
     volumes:
       - minio_data:/data
 
+  knowledge-import:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: scripts/knowledge-import.Dockerfile
+      args:
+        IMAGE_PREFIX: ${DOCKER_IMAGE_PREFIX:-docker.io/library/}
+    env_file:
+      - services/yuxi/.env
+    environment:
+      GEOCHAT_API: http://host.docker.internal:5050/api
+      PORTAL_API: http://api:8000/api/v1
+      KNOWLEDGE_OUTPUT_DIR: /tmp
+      GEOCHAT_IMPORT_USER_ID: ${GEOCHAT_IMPORT_USER_ID:-1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   minio_data:

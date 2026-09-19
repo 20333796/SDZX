@@ -31,6 +31,18 @@
             <span class="hide-text">Debug</span>
           </button>
           <button
+            v-if="!isRetrievalPanelOpen"
+            type="button"
+            class="agent-nav-btn agent-state-btn retrieval-entry-btn"
+            title="检索记录与资源"
+            :aria-expanded="isRetrievalPanelOpen"
+            aria-controls="agent-retrieval-panel"
+            @click.stop="toggleRetrievalPanel"
+          >
+            <Clock size="16" class="nav-btn-icon" />
+            <span class="hide-text">检索</span>
+          </button>
+          <button
             v-if="showStateEntry"
             type="button"
             class="agent-nav-btn agent-state-btn state-entry-btn"
@@ -775,6 +787,16 @@
             </div>
           </div>
         </div>
+
+        <AgentRetrievalPanel
+          v-if="isRetrievalPanelOpen"
+          id="agent-retrieval-panel"
+          :class="['retrieval-side-panel', { 'is-browsing': isPanelBrowsing }]"
+          :records="mergedRetrievalRecords"
+          :pending-link="pendingPanelLink"
+          @close="isRetrievalPanelOpen = false"
+          @browsing-change="isPanelBrowsing = $event"
+        />
       </div>
 
       <div
@@ -843,6 +865,7 @@ import { message } from 'ant-design-vue'
 import {
   Bug,
   ChevronDown,
+  Clock,
   CornerDownRight,
   Folders,
   ListCollapse,
@@ -854,6 +877,7 @@ import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
 import { CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import AgentInputArea from '@/components/AgentInputArea.vue'
+import AgentRetrievalPanel from '@/components/AgentRetrievalPanel.vue'
 import ContextUsageRing from '@/components/ContextUsageRing.vue'
 import ToolApprovalModeSelector from '@/components/ToolApprovalModeSelector.vue'
 import ModelSelectorComponent from '@/components/ModelSelectorComponent.vue'
@@ -874,6 +898,10 @@ import {
   shouldSuggestContextCompression as isContextCompressionSuggested
 } from '@/utils/contextUsage'
 import { AgentValidator } from '@/utils/agentValidator'
+import {
+  loadCachedRetrievalRecords,
+  mergeRetrievalRecordsIntoCache
+} from '@/utils/retrievalRecordCache'
 import { useAgentStore } from '@/stores/agent'
 import { useChatThreadsStore } from '@/stores/chatThreads'
 import { useChatUIStore } from '@/stores/chatUI'
@@ -948,8 +976,13 @@ const configStore = useConfigStore()
 const infoStore = useInfoStore()
 const userStore = useUserStore()
 const messageDebugEnabled = computed(() => infoStore.debugMode && userStore.isSuperAdmin)
-const { agents, selectedAgentId, agentConfig, configurableItems, availableKnowledgeBases } =
-  storeToRefs(agentStore)
+const {
+  agents,
+  selectedAgentId,
+  agentConfig,
+  configurableItems,
+  availableKnowledgeBases
+} = storeToRefs(agentStore)
 const { threads, currentThreadId, currentThread, threadCreationInFlight } =
   storeToRefs(chatThreadsStore)
 
@@ -1043,6 +1076,27 @@ const sideActive = computed(() => {
   if (statePanelOpen.value) return 'state'
   return ''
 })
+
+// 检索与资源面板（右侧）：宽屏默认展开，与文件/状态面板互斥
+const isRetrievalPanelOpen = ref(
+  typeof window !== 'undefined' ? window.innerWidth >= 1280 : false
+)
+const toggleRetrievalPanel = () => {
+  const nextOpen = !isRetrievalPanelOpen.value
+  isRetrievalPanelOpen.value = nextOpen
+  if (nextOpen) {
+    isFilePanelOpen.value = false
+    statePanelOpen.value = false
+  }
+}
+// 文件/状态面板任意一个打开时，自动收起检索面板（覆盖 showFilePanel/调试入口等所有打开路径）
+watch([isFilePanelOpen, statePanelOpen], ([fileOpen, stateOpen]) => {
+  if ((fileOpen || stateOpen) && isRetrievalPanelOpen.value) {
+    isRetrievalPanelOpen.value = false
+  }
+})
+// 面板是否处于内嵌浏览状态（由子组件上报，用于加宽面板）
+const isPanelBrowsing = ref(false)
 const isResizing = ref(false)
 const isAgentPanelMaximized = ref(false)
 const defaultPanelRatio = 0.5
@@ -2314,6 +2368,119 @@ const conversationRows = computed(() => {
   }
 
   return rows
+})
+
+// ==================== 检索记录提取（右侧检索与资源面板，仅展示网络检索） ====================
+const WEB_SEARCH_TOOL_KEYWORDS = ['web_search', 'tavily_search', 'doubao_search']
+const MAX_RETRIEVAL_RECORDS = 50
+const MAX_RECORD_HITS = 3
+
+const isWebSearchToolName = (toolName) =>
+  WEB_SEARCH_TOOL_KEYWORDS.some((keyword) => toolName.includes(keyword))
+
+const parseToolResultJson = (content) => {
+  if (!content) return null
+  if (typeof content === 'object') return content
+  if (typeof content !== 'string') return null
+  const trimmed = content.trim()
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return null
+  }
+}
+
+const formatRecordTime = (createdAt) => {
+  if (!createdAt) return ''
+  const time = parseToShanghai(createdAt)
+  if (!time || !time.isValid?.()) return ''
+  const now = parseToShanghai(Date.now())
+  return time.isSame(now, 'day') ? time.format('HH:mm') : time.format('MM-DD HH:mm')
+}
+
+// 遍历当前线程全部对话消息中的网络搜索工具调用，生成「最近检索」记录（最新在前）。
+// 结构参照 ongoingSubagentLaunchCalls 的 tool_calls 提取样板。
+// 仅保留网络搜索（web_search / tavily_search / doubao_search 及变体），知识库检索不在此面板罗列。
+const retrievalRecords = computed(() => {
+  const records = []
+  const seenKeys = new Set()
+
+  conversations.value.forEach((conv) => {
+    if (!conv || !Array.isArray(conv.messages)) return
+    conv.messages.forEach((msg) => {
+      if (!msg || msg.type !== 'ai' || !Array.isArray(msg.tool_calls)) return
+      msg.tool_calls.forEach((toolCall, callIndex) => {
+        const toolName = String(toolCall?.name || toolCall?.function?.name || '').toLowerCase()
+        if (!toolName || !isWebSearchToolName(toolName)) return
+
+        const args = parseToolCallArgs(toolCall)
+        const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
+        const rawResults = Array.isArray(parsedResult?.results) ? parsedResult.results : []
+
+        const hits = []
+        for (const item of rawResults) {
+          const title = typeof item?.title === 'string' ? item.title.trim() : ''
+          const url = typeof item?.url === 'string' ? item.url.trim() : ''
+          if (!title || !url) continue
+          hits.push({ key: url, type: 'url', label: title, url })
+        }
+        if (!hits.length) return
+
+        const key = String(toolCall?.id || `${toolName}-${msg.id || ''}-${callIndex}`)
+        if (seenKeys.has(key)) return
+        seenKeys.add(key)
+
+        records.push({
+          key,
+          kindLabel: '网络搜索',
+          title: String(args?.query || parsedResult?.query || toolName).trim(),
+          timeText: formatRecordTime(msg.created_at),
+          hits: hits.slice(0, MAX_RECORD_HITS),
+          extraCount: Math.max(0, hits.length - MAX_RECORD_HITS)
+        })
+      })
+    })
+  })
+
+  return records.reverse().slice(0, MAX_RETRIEVAL_RECORDS)
+})
+
+// 跨线程检索记录缓存：当前线程有新检索时并入本地缓存，
+// 面板展示 = 缓存 + 当前线程实时记录（key 去重，savedAt 降序）。
+const savedRetrievalRecords = ref(loadCachedRetrievalRecords())
+watch(
+  retrievalRecords,
+  (records) => {
+    if (!records.length) return
+    const next = mergeRetrievalRecordsIntoCache(records, {
+      threadId: currentChatId.value || '',
+      threadTitle: currentThread.value?.title || ''
+    })
+    savedRetrievalRecords.value = next
+  },
+  { immediate: true }
+)
+
+const mergedRetrievalRecords = computed(() => {
+  const byKey = new Map()
+  for (const rec of savedRetrievalRecords.value) byKey.set(rec.key, rec)
+  for (const rec of retrievalRecords.value) {
+    byKey.set(rec.key, { ...rec, savedAt: rec.savedAt || Date.now() })
+  }
+  return [...byKey.values()]
+    .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))
+    .slice(0, MAX_RETRIEVAL_RECORDS)
+})
+
+// 消息正文里的外部链接 → 面板内嵌打开（MarkdownPreview 通过 inject 调用，无 provider 时新窗口兜底）
+const pendingPanelLink = ref(null)
+provide('openExternalLinkInPanel', (url, title) => {
+  if (!url || !/^https?:\/\//i.test(url)) return
+  isFilePanelOpen.value = false
+  statePanelOpen.value = false
+  isRetrievalPanelOpen.value = true
+  pendingPanelLink.value = { url, title: title || '', ts: Date.now() }
 })
 
 const isLoadingMessages = computed(() => chatUIStore.isLoadingMessages)
@@ -4652,7 +4819,30 @@ watch(currentChatId, (threadId, oldThreadId) => {
   }
 }
 
+// 检索与资源面板（右侧 in-flow 列，宽 320px；外观由组件自身样式定义）
+.chat-content-container .retrieval-side-panel {
+  flex: 0 0 320px;
+  min-width: 0;
+  border-radius: 0;
+  transition:
+    flex-basis 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// 内嵌浏览时加宽面板，保证网页可读；关闭后恢复
+.chat-content-container .retrieval-side-panel.is-browsing {
+  flex: 0 0 min(640px, 44vw);
+}
+
 @media (max-width: 1024px) {
+  .chat-content-container .retrieval-side-panel {
+    flex: 0 0 min(320px, 34vw);
+  }
+
+  .chat-content-container .retrieval-side-panel.is-browsing {
+    flex: 0 0 min(640px, 44vw);
+  }
+
   .chat-content-container.has-file-panel .chat-main,
   .chat-content-container.has-state-panel .chat-main {
     min-width: 350px;
@@ -4692,6 +4882,25 @@ watch(currentChatId, (threadId, oldThreadId) => {
   .side-panel--state.is-floating {
     right: 12px;
     width: min(320px, calc(100% - 24px));
+  }
+
+  // 窄屏下检索面板改为右侧浮层，避免挤压对话区
+  .chat-content-container .retrieval-side-panel {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 35;
+    flex: 0 0 auto;
+    width: min(320px, calc(100% - 16px));
+    border: 1px solid var(--gray-150);
+    border-radius: 10px;
+    box-shadow: 0 16px 40px var(--shadow-1);
+  }
+
+  // 窄屏浮层内嵌浏览时同样加宽
+  .chat-content-container .retrieval-side-panel.is-browsing {
+    width: min(640px, calc(100% - 16px));
   }
 
   .state-panel {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { ExternalLink } from '@lucide/vue'
 import { fallbackResources } from '@/config/resources'
 import { resourceCover, resourceIcon } from '@/config/resourceIcons'
@@ -8,7 +9,13 @@ import DestinationNote from '@/features/portal/DestinationNote.vue'
 
 // This column has real content: the catalog already carries the virtual-lab experiments. It used to be
 // one of three cards on a shared page, so the experiments themselves were never listed here.
-const experiments = computed(() => fallbackResources.filter((resource) => resource.category === 'practice'))
+const route = useRoute()
+const experiments = computed(() => {
+  const keyword = typeof route.query.q === 'string' ? route.query.q.trim().toLowerCase() : ''
+  return fallbackResources
+    .filter((resource) => resource.category === 'practice')
+    .filter((resource) => !keyword || `${resource.title} ${resource.provider} ${resource.description}`.toLowerCase().includes(keyword))
+})
 </script>
 
 <template>

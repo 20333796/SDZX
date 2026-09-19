@@ -173,8 +173,10 @@ class User(Base):
     phone_number = Column(String, nullable=True, unique=True, index=True)  # 手机号
     avatar = Column(String, nullable=True)  # 头像URL
     password_hash = Column(String, nullable=False)
-    role = Column(String, nullable=False, default="user")  # 角色: superadmin, admin, user
-    account_type = Column(String, nullable=False, default="student")  # 身份: student, teacher
+    role = Column(String, nullable=False, default="user", server_default="user")  # 角色: superadmin, admin, user
+    # server_default 必须保留：代码建表（create_all）时只有 Python 端 default 不会写进 DDL，
+    # 非 ORM 路径（Core insert / 批量插入）就会因 account_type 为 NULL 触发 NOT NULL 违规
+    account_type = Column(String, nullable=False, default="student", server_default="student")  # 身份: student, teacher
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)  # 部门ID
     created_at = Column(DateTime, default=utc_now_naive)
     last_login = Column(DateTime, nullable=True)

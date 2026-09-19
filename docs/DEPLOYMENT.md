@@ -49,7 +49,33 @@ bash scripts/start-platform.sh
 
 ## 数据与备份
 
-Compose 命名卷保存 PostgreSQL 和 MinIO 数据，GeoChat 的持久化目录位于 `services/yuxi/docker/volumes/`。停止服务不要使用 `docker compose down -v`。迁移或升级前导出 PostgreSQL，并备份该目录；Docker Desktop 的磁盘镜像也应位于 D 盘。
+门户课程、仿真资源、地学数据和演示学习任务由版本库内的种子代码自动写入 PostgreSQL；全校导师公开资料保存在 `apps/web/src/config/mentorDirections.json`。这些内容就是可公开、可重复恢复的数据库基线，不需要提交本机数据库二进制文件。
+
+GeoChat 首次部署后，先在工作台完成管理员初始化，再执行一次知识库导入。默认首个管理员的用户 ID 为 `1`；如果实际 ID 不同，在根目录 `.env` 中设置 `GEOCHAT_IMPORT_USER_ID`：
+
+```powershell
+docker compose --project-name deep-geology --project-directory . -f infra/compose/docker-compose.yml --profile tools run --rm --build knowledge-import
+```
+
+导入器读取 `services/yuxi/.env` 中部署时生成的 JWT 配置，从门户 API 汇总当前课程和仿真资源，并将导师、课程和官网链接写入 GeoChat 知识库。运行前必须启用 GeoChat 的 `knowledge` profile，并配置可用的 embedding 模型；提交成功后在任务中心确认“知识库文档处理”完成。重复执行会复用同名知识库并跳过已经存在的同名知识文档。
+
+运行数据由多种存储共同组成：门户 PostgreSQL 与 MinIO 使用 Compose 命名卷，GeoChat 的 PostgreSQL、Milvus、MinIO、Neo4j 和工作区位于 `services/yuxi/docker/volumes/`。这些原始文件包含账号、密码散列、会话、令牌、用户上传文件和机器相关状态，禁止提交到 Git。
+
+升级前先停止写入，并分别备份关系数据库和 GeoChat 状态目录：
+
+```powershell
+New-Item -ItemType Directory -Force .\backups | Out-Null
+docker exec geochat-runtime-postgres-1 pg_dump -U postgres -d yuxi -Fc -f /tmp/yuxi.dump
+docker cp geochat-runtime-postgres-1:/tmp/yuxi.dump .\backups\yuxi.dump
+docker compose --project-name deep-geology -f infra/compose/docker-compose.yml exec postgres pg_dump -U geology_ai -d geology_ai -Fc -f /tmp/portal.dump
+docker compose --project-name deep-geology -f infra/compose/docker-compose.yml cp postgres:/tmp/portal.dump .\backups\portal.dump
+```
+
+随后备份 `services/yuxi/docker/volumes/` 和门户 MinIO 命名卷。备份文件只应进入受控备份存储，不应提交到公开 GitHub。停止服务不要使用 `docker compose down -v`；Docker Desktop 的磁盘镜像建议放在数据盘。
+
+## 健康检查与升级
+
+启动后运行 `scripts/start-platform.ps1 -Health`，并确认门户、GeoChat API 和工作台均可访问。升级时先完成上述备份，再执行 `git pull --ff-only` 和 `scripts/start-platform.ps1 -Build`。Alembic 与 GeoChat storage-migrator 会在服务启动阶段应用结构迁移，不要手工修改已经应用的迁移文件。
 
 ## 故障处理
 

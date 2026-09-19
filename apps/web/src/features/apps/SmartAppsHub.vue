@@ -19,9 +19,8 @@ import {
 import { useRouter } from 'vue-router'
 import { WELL_LOG_LAB_PATH } from '@/config/destinations'
 
-// 智能应用是入口聚合页：每个卡片只承担"介绍 + 进入"两件事，不承载应用本身。
-// 已上线（站内路由 / 站外链接）与建设中分组展示，各占一组互不混排。
-// 版式对齐学情诊断的卡片语言：白卡 + 左侧状态竖条 + 同款图标芯片。
+// 智能应用是入口聚合页：每张卡片 = 顶部主题封面 + 介绍 + 进入动作。
+// 已上线与建设中分组展示，各占一组互不混排；封面为自绘 SVG 扁平横幅（品牌蓝/青/沙统一体系）。
 const router = useRouter()
 
 interface AppEntry {
@@ -115,6 +114,12 @@ function isLive(app: AppEntry) {
 const liveApps = apps.filter(isLive)
 const buildingApps = apps.filter(app => !isLive(app))
 
+// 卡片封面：自绘 SVG 扁平横幅（品牌蓝/青/沙色统一体系），按应用 id 一一对应。
+const COVER_IDS = new Set(['well-log', 'hpc', 'seismic', 'core', 'petrophysics', 'graph-qa', 'remote-sensing', 'mineral', 'hazard', 'hydro', 'paleo'])
+function coverFor(app: AppEntry) {
+  return COVER_IDS.has(app.id) ? `/images/apps/${app.id}.svg` : `/images/apps/hydro.svg`
+}
+
 function openApp(app: AppEntry) {
   if (app.path) {
     void router.push(app.path)
@@ -149,17 +154,20 @@ const placeholderNotice = ref('')
           class="app-card is-ready"
           @click="openApp(app)"
         >
-          <div class="card-head">
-            <span class="icon-chip"><component :is="app.icon" :size="20" /></span>
+          <div class="app-cover">
+            <img :src="coverFor(app)" :alt="`${app.title} 封面`" loading="lazy" />
+            <span class="cover-tag">已上线</span>
           </div>
-          <h3>{{ app.title }}</h3>
-          <p>{{ app.description }}</p>
-          <div class="app-foot">
-            <span class="app-action is-live">
-              {{ app.external ? '打开工作台' : '进入应用' }}
-              <ArrowUpRight v-if="app.external" :size="14" />
-              <ArrowRight v-else :size="14" />
-            </span>
+          <div class="app-body">
+            <h3>{{ app.title }}</h3>
+            <p>{{ app.description }}</p>
+            <div class="app-foot">
+              <span class="app-action is-live">
+                {{ app.external ? '打开工作台' : '进入应用' }}
+                <ArrowUpRight v-if="app.external" :size="14" />
+                <ArrowRight v-else :size="14" />
+              </span>
+            </div>
           </div>
         </article>
       </div>
@@ -178,13 +186,16 @@ const placeholderNotice = ref('')
           class="app-card"
           @click="openApp(app)"
         >
-          <div class="card-head">
-            <span class="icon-chip"><component :is="app.icon" :size="20" /></span>
+          <div class="app-cover">
+            <img :src="coverFor(app)" :alt="`${app.title} 封面`" loading="lazy" />
+            <span class="cover-tag">建设中</span>
           </div>
-          <h3>{{ app.title }}</h3>
-          <p>{{ app.description }}</p>
-          <div class="app-foot">
-            <span class="app-action">敬请期待 <ArrowRight :size="14" /></span>
+          <div class="app-body">
+            <h3>{{ app.title }}</h3>
+            <p>{{ app.description }}</p>
+            <div class="app-foot">
+              <span class="app-action">敬请期待 <ArrowRight :size="14" /></span>
+            </div>
           </div>
         </article>
       </div>
@@ -214,28 +225,28 @@ const placeholderNotice = ref('')
 .group-head h2 { margin: 0; color: #17384d; font-size: 16px; font-weight: 800; }
 .group-count { color: #8a97a8; font-size: 12.5px; font-weight: 700; }
 
-/* 左侧竖条是卡片识别特征，同时承担上线状态区分：已上线蓝条，建设中灰条。 */
+/* 卡片 = 顶部全宽封面 + 内容区；封面即视觉主体，去掉竖条语言。 */
 .app-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 22px 24px 20px 21px;
   background: #fff;
   border: 1px solid #e6ecf2;
-  border-left: 3px solid #c3d3e0;
   border-radius: 14px;
+  overflow: hidden;
   box-shadow: 0 1px 2px rgba(16, 52, 84, .05);
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 .app-card:hover { transform: translateY(-4px); border-color: #d4e3ef; box-shadow: 0 14px 28px rgba(7, 94, 163, .13); }
-.app-card.is-ready { cursor: pointer; border-left-color: #0870bc; }
-.app-card.is-ready:hover { border-left-color: #0870bc; }
+.app-card.is-ready { cursor: pointer; }
 
-.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-.icon-chip { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #e8f4fc; color: #0870bc; }
+.app-cover { position: relative; background: #eef6fb; }
+.app-cover img { display: block; width: 100%; height: 168px; object-fit: cover; }
+.cover-tag { position: absolute; top: 10px; right: 10px; padding: 3px 10px; color: #8a97a8; background: rgba(255, 255, 255, .92); border: 1px solid #d8e3ee; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.app-card.is-ready .cover-tag { color: #0b6cb8; border-color: #c8e2f6; }
 
-.app-card h3 { margin: 0; color: #17384d; font-size: 17px; font-weight: 800; }
-.app-card p { margin: 0; min-height: 42px; color: #5f7487; font-size: 13px; line-height: 1.8; }
+.app-body { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px 14px; }
+.app-body h3 { margin: 0; color: #17384d; font-size: 17px; font-weight: 800; }
+.app-body p { margin: 0; min-height: 44px; color: #5f7487; font-size: 13px; line-height: 1.8; }
 
 .app-foot { display: flex; align-items: center; justify-content: flex-end; margin-top: auto; padding-top: 10px; border-top: 1px solid #eef3f9; }
 .app-action { display: inline-flex; align-items: center; gap: 5px; color: #9aa8ba; font-size: 13px; font-weight: 700; }
@@ -245,6 +256,6 @@ const placeholderNotice = ref('')
 @media (max-width: 760px) {
   .apps-hub { margin-top: 20px; padding: 20px 16px 22px; }
   .apps-grid { grid-template-columns: 1fr; }
-  .app-card p { min-height: 0; }
+  .app-body p { min-height: 0; }
 }
 </style>

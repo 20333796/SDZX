@@ -1,3 +1,5 @@
+import mentorDirectionData from './mentorDirections.json'
+
 export type MentorSchool = string
 
 export type Mentor = {
@@ -295,6 +297,20 @@ const profileBase: Record<MentorSchool, Record<string, string>> = {
 
 const verifiedByTeacher = new Map(verifiedMentors.map((mentor) => [`${mentor.school}:${mentor.name}`, mentor]))
 
+// 研究方向结构化数据：自官方教师主页（faculty.cup.edu.cn/{path}/）公开简介中一次性提取生成，
+// 主页路径与姓名双索引；核验过的教师条目优先，其余按爬取结果补齐，两处都没有才留空。
+type MentorDirectionEntry = { path: string; name: string; directions: string[] }
+const crawledByPath = new Map<string, string[]>()
+const crawledByName = new Map<string, string[]>()
+for (const entry of mentorDirectionData.teachers as MentorDirectionEntry[]) {
+  crawledByPath.set(entry.path, entry.directions)
+  if (!crawledByName.has(entry.name)) crawledByName.set(entry.name, entry.directions)
+}
+
+export function crawledDirections(path?: string, name?: string): string[] {
+  return (path && crawledByPath.get(path)) || (name && crawledByName.get(name)) || []
+}
+
 export const mentors: Mentor[] = officialTeacherDirectory.map(([school, title, name, page]) => {
   const verified = verifiedByTeacher.get(`${school}:${name}`)
   if (verified) return { ...verified, title }
@@ -303,7 +319,7 @@ export const mentors: Mentor[] = officialTeacherDirectory.map(([school, title, n
     name,
     school,
     title,
-    directions: [],
+    directions: crawledDirections(undefined, name),
     summary: '中国石油大学（北京）学院官网师资队伍名录已列示该教师。',
     sourceUrl: `${profileBase[school][title]}${page}`
   }
@@ -359,12 +375,14 @@ function toPortalMentor(teacher: PortalTeacher): Mentor {
   const verified = verifiedByTeacher.get(`${school}:${teacher.fullName}`)
   const mentorTypes = splitOfficialValue(teacher.teacherType)
   const subjects = splitOfficialValue(teacher.subjectName)
+  const directions = verified?.directions.length ? verified.directions : crawledDirections(teacher.path, teacher.fullName)
   if (verified) {
     return {
       ...verified,
       id: `portal:${teacher.id}`,
       title: teacher.jobTitle ?? verified.title,
       unit: teacher.facultyName ?? undefined,
+      directions,
       mentorTypes,
       subjects,
       sourceUrl: `https://faculty.cup.edu.cn/${teacher.path}/`
@@ -376,7 +394,7 @@ function toPortalMentor(teacher: PortalTeacher): Mentor {
     school,
     unit: teacher.facultyName ?? undefined,
     title: teacher.jobTitle ?? '职称未公开',
-    directions: [],
+    directions,
     mentorTypes,
     subjects,
     summary: '中国石油大学（北京）官方教师平台已列示该教师的公开信息。',
