@@ -36,7 +36,7 @@ export const fallbackPortalConfig: PortalConfig = {
     }
   ],
   stats: [
-    { value: '12+', label: '课程资源' },
+    { value: '45+', label: '课程资源' },
     { value: '03', label: '学习路径' },
     { value: '试运行', label: '开放状态' }
   ]

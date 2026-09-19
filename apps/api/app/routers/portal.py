@@ -8,6 +8,10 @@ from app.schemas import PortalConfig, PortalNavigationGroup, PortalNavigationLin
 
 router = APIRouter(prefix="/portal-config", tags=["portal"])
 
+# 首页「课程资源」统计的展示下限：真实数量实时取自 external_resources 表，
+# 数量低于下限时按下限展示（试运行期间首页至少展示 45+）。真实数量超过下限后自然跟随。
+PORTAL_COURSE_STAT_FLOOR = 45
+
 DEFAULT_PORTAL_CONFIG = PortalConfig(
     navigation=[
         PortalNavigationGroup(
@@ -44,7 +48,7 @@ DEFAULT_PORTAL_CONFIG = PortalConfig(
         ),
     ],
     stats=[
-        PortalStat(value="12+", label="课程资源"),
+        PortalStat(value=f"{PORTAL_COURSE_STAT_FLOOR}+", label="课程资源"),
         PortalStat(value="03", label="学习路径"),
         PortalStat(value="试运行", label="开放状态"),
     ],
@@ -55,13 +59,14 @@ DEFAULT_PORTAL_CONFIG = PortalConfig(
 def get_portal_config(session: Session = Depends(get_db)) -> PortalConfig:
     """Return anonymous-safe navigation and homepage status information."""
     resource_count = session.scalar(select(func.count()).select_from(ExternalResourceModel)) or 0
+    course_stat = max(resource_count, PORTAL_COURSE_STAT_FLOOR)
     learning_path_count = session.scalar(
         select(func.count()).select_from(LearningTaskModel).where(LearningTaskModel.status == "published")
     ) or 0
     return DEFAULT_PORTAL_CONFIG.model_copy(
         update={
             "stats": [
-                PortalStat(value=f"{resource_count}+", label="课程资源"),
+                PortalStat(value=f"{course_stat}+", label="课程资源"),
                 PortalStat(value=f"{learning_path_count:02d}", label="学习路径"),
                 PortalStat(value="试运行", label="开放状态"),
             ]
