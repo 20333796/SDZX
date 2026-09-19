@@ -72,7 +72,7 @@
     <CollapseTransition>
       <div v-if="isExpanded" class="tool-content">
         <!-- Params Slot -->
-        <div class="tool-params" v-if="hasParams && !hideParams">
+        <div class="tool-params" v-if="hasParams && !paramsHidden">
           <slot name="params" :tool-call="toolCall" :args="formattedArgs">
             <div class="tool-params-content">
               <strong>参数: </strong>
@@ -113,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { Loader, ChevronsUpDown, ChevronsDownUp, XCircle, CheckCircle } from '@lucide/vue'
 import { useAgentStore } from '@/stores/agent'
 import { storeToRefs } from 'pinia'
@@ -157,6 +157,15 @@ const props = defineProps({
 
 const agentStore = useAgentStore()
 const { availableTools, toolMetadata } = storeToRefs(agentStore)
+
+// 参数区屏蔽：组件自身 hideParams 优先；上层（ToolCallsGroupComponent）可按用户类别
+// 通过 provide('hideToolParams') 下发屏蔽信号（非管理员隐藏参数，命令与输出不受影响）。
+const injectedHideToolParams = inject('hideToolParams', null)
+const paramsHidden = computed(() => {
+  if (props.hideParams) return true
+  const injected = injectedHideToolParams
+  return injected === true || injected?.value === true
+})
 
 const isExpanded = ref(props.defaultExpanded)
 const isTimeline = computed(() => props.appearance === 'timeline')

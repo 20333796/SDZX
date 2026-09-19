@@ -1,7 +1,7 @@
 <template>
   <div v-if="displayEntries.length > 0" class="tool-calls-container">
     <button
-      v-if="shouldCollapseToolCalls && canViewToolDetails"
+      v-if="shouldCollapseToolCalls"
       type="button"
       class="tool-calls-summary"
       :class="{ 'is-expanded': areToolCallsExpanded }"
@@ -30,28 +30,7 @@
       </span>
     </button>
 
-    <!-- 教师/学生/访客类别：仅展示概要行，不展示工具调用与参数细节 -->
     <div
-      v-else-if="shouldCollapseToolCalls"
-      class="tool-calls-summary is-static"
-      aria-disabled="true"
-    >
-      <span class="summary-leading">
-        <Atom size="14" />
-      </span>
-      <span class="summary-content">
-        <span class="summary-title">{{ toolCallsSummaryTitle }}</span>
-        <span class="summary-separator" v-if="normalizedToolCalls.length > 1 && toolCallsNamesMeta"
-          >·</span
-        >
-        <span class="summary-meta" v-if="normalizedToolCalls.length > 1 && toolCallsNamesMeta">{{
-          toolCallsNamesMeta
-        }}</span>
-      </span>
-    </div>
-
-    <div
-      v-if="canViewToolDetails"
       class="tool-calls-collapse-panel"
       :class="{ 'is-expanded': !shouldCollapseToolCalls || areToolCallsExpanded }"
     >
@@ -77,7 +56,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, inject } from 'vue'
+import { computed, ref, watch, inject, provide } from 'vue'
 import { ChevronDown, Atom } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import { useAgentStore } from '@/stores/agent'
@@ -97,12 +76,18 @@ const { availableTools, toolMetadata } = storeToRefs(agentStore)
 
 const userStore = useUserStore()
 
-// 工具调用参数细节仅管理员可见（admin/superadmin 角色，或所属「管理员」部门）；
-// 教师/学生/访客类别仅展示工具概要行，不展开命令、参数与输出。
+// 工具调用的参数（args）细节仅管理员可见（admin/superadmin 角色，或所属「管理员」部门）；
+// 教师/学生/访客类别仍可点击概要并展开查看工具调用本身（命令、输出），仅屏蔽参数细节。
 const canViewToolDetails = computed(() => {
   if (userStore.isAdmin) return true
   return String(userStore.departmentName || '').trim() === '管理员'
 })
+
+// 下发给所有工具卡（BaseToolCall 统一消费）：非管理员隐藏参数区，命令与输出不受影响。
+provide(
+  'hideToolParams',
+  computed(() => !canViewToolDetails.value)
+)
 
 const activeSubagentToolCallIds = inject('activeSubagentToolCallIds', null)
 
@@ -238,11 +223,6 @@ const toggleToolCallsExpanded = () => {
     transition: color 0.15s ease;
     user-select: none;
     background: transparent;
-
-    &.is-static {
-      cursor: default;
-      user-select: text;
-    }
 
     &:focus-visible {
       outline: 2px solid var(--main-300);
