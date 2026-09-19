@@ -2370,13 +2370,17 @@ const conversationRows = computed(() => {
   return rows
 })
 
-// ==================== 检索记录提取（右侧检索与资源面板，仅展示网络检索） ====================
+// ==================== 检索记录提取（右侧检索面板：网络搜索 + 网页访问） ====================
 const WEB_SEARCH_TOOL_KEYWORDS = ['web_search', 'tavily_search', 'doubao_search']
+const WEB_FETCH_TOOL_KEYWORDS = ['execute']
 const MAX_RETRIEVAL_RECORDS = 50
 const MAX_RECORD_HITS = 3
 
 const isWebSearchToolName = (toolName) =>
   WEB_SEARCH_TOOL_KEYWORDS.some((keyword) => toolName.includes(keyword))
+
+const isWebFetchToolName = (toolName) =>
+  WEB_FETCH_TOOL_KEYWORDS.some((keyword) => toolName.includes(keyword))
 
 const parseToolResultJson = (content) => {
   if (!content) return null
@@ -2391,6 +2395,40 @@ const parseToolResultJson = (content) => {
   }
 }
 
+// 从 execute 类工具的命令参数里提取被访问的 http(s) 网址（过滤本机地址）。
+const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i
+const extractWebFetchHits = (toolCall) => {
+  const args = parseToolCallArgs(toolCall)
+  const commandParts = [args?.command, args?.cmd, args?.script].filter(
+    (part) => typeof part === 'string' && part
+  )
+  const source = commandParts.length
+    ? commandParts.join('\n')
+    : (() => {
+        try {
+          return JSON.stringify(args || {})
+        } catch {
+          return ''
+        }
+      })()
+
+  const hits = []
+  const seenUrls = new Set()
+  for (const rawUrl of source.match(/https?:\/\/[^\s"'`<>\\)\]}]+/g) || []) {
+    const url = rawUrl.replace(/[.,;:]+$/, '')
+    if (!url || seenUrls.has(url)) continue
+    seenUrls.add(url)
+    try {
+      const parsed = new URL(url)
+      if (LOCAL_HOST_PATTERN.test(parsed.hostname)) continue
+      hits.push({ key: url, type: 'url', label: url.replace(/^https?:\/\//, ''), url })
+    } catch {
+      /* 非法 URL，忽略 */
+    }
+  }
+  return hits
+}
+
 const formatRecordTime = (createdAt) => {
   if (!createdAt) return ''
   const time = parseToShanghai(createdAt)
@@ -2399,9 +2437,10 @@ const formatRecordTime = (createdAt) => {
   return time.isSame(now, 'day') ? time.format('HH:mm') : time.format('MM-DD HH:mm')
 }
 
-// 遍历当前线程全部对话消息中的网络搜索工具调用，生成「最近检索」记录（最新在前）。
-// 结构参照 ongoingSubagentLaunchCalls 的 tool_calls 提取样板。
-// 仅保留网络搜索（web_search / tavily_search / doubao_search 及变体），知识库检索不在此面板罗列。
+// 遍历当前线程全部对话消息，生成「最近检索」记录（最新在前）。
+// 收录两类：网络搜索（web_search / tavily_search / doubao_search 及变体）、
+// 网页访问（execute 等命令工具里携带 http(s) 网址的调用，如 curl 抓取网页）。
+// 知识库检索、本地文件读写等不在此面板罗列。
 const retrievalRecords = computed(() => {
   const records = []
   const seenKeys = new Set()
@@ -2412,20 +2451,35 @@ const retrievalRecords = computed(() => {
       if (!msg || msg.type !== 'ai' || !Array.isArray(msg.tool_calls)) return
       msg.tool_calls.forEach((toolCall, callIndex) => {
         const toolName = String(toolCall?.name || toolCall?.function?.name || '').toLowerCase()
-        if (!toolName || !isWebSearchToolName(toolName)) return
+        if (!toolName) return
 
-        const args = parseToolCallArgs(toolCall)
-        const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
-        const rawResults = Array.isArray(parsedResult?.results) ? parsedResult.results : []
+        let kindLabel = ''
+        let title = ''
+        let hits = []
 
-        const hits = []
-        for (const item of rawResults) {
-          const title = typeof item?.title === 'string' ? item.title.trim() : ''
-          const url = typeof item?.url === 'string' ? item.url.trim() : ''
-          if (!title || !url) continue
-          hits.push({ key: url, type: 'url', label: title, url })
+        if (isWebSearchToolName(toolName)) {
+          const args = parseToolCallArgs(toolCall)
+          const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
+          const rawResults = Array.isArray(parsedResult?.results) ? parsedResult.results : []
+
+          hits = []
+          for (const item of rawResults) {
+            const hitTitle = typeof item?.title === 'string' ? item.title.trim() : ''
+            const url = typeof item?.url === 'string' ? item.url.trim() : ''
+            if (!hitTitle || !url) continue
+            hits.push({ key: url, type: 'url', label: hitTitle, url })
+          }
+          if (!hits.length) return
+          kindLabel = '网络搜索'
+          title = String(args?.query || parsedResult?.query || toolName).trim()
+        } else if (isWebFetchToolName(toolName)) {
+          hits = extractWebFetchHits(toolCall)
+          if (!hits.length) return
+          kindLabel = '网页访问'
+          title = hits[0].label
+        } else {
+          return
         }
-        if (!hits.length) return
 
         const key = String(toolCall?.id || `${toolName}-${msg.id || ''}-${callIndex}`)
         if (seenKeys.has(key)) return
@@ -2433,8 +2487,8 @@ const retrievalRecords = computed(() => {
 
         records.push({
           key,
-          kindLabel: '网络搜索',
-          title: String(args?.query || parsedResult?.query || toolName).trim(),
+          kindLabel,
+          title,
           timeText: formatRecordTime(msg.created_at),
           hits: hits.slice(0, MAX_RECORD_HITS),
           extraCount: Math.max(0, hits.length - MAX_RECORD_HITS)
