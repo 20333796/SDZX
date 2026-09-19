@@ -185,8 +185,9 @@
                       <a-segmented
                         v-model:value="registrationForm.account_type"
                         :options="[
+                          { label: '教师', value: 'teacher' },
                           { label: '学生', value: 'student' },
-                          { label: '教师', value: 'teacher' }
+                          { label: '访客', value: 'visitor' }
                         ]"
                         block
                       />

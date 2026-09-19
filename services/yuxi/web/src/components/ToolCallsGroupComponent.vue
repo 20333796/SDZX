@@ -1,7 +1,7 @@
 <template>
   <div v-if="displayEntries.length > 0" class="tool-calls-container">
     <button
-      v-if="shouldCollapseToolCalls"
+      v-if="shouldCollapseToolCalls && canViewToolDetails"
       type="button"
       class="tool-calls-summary"
       :class="{ 'is-expanded': areToolCallsExpanded }"
@@ -30,7 +30,28 @@
       </span>
     </button>
 
+    <!-- 教师/学生/访客类别：仅展示概要行，不展示工具调用与参数细节 -->
     <div
+      v-else-if="shouldCollapseToolCalls"
+      class="tool-calls-summary is-static"
+      aria-disabled="true"
+    >
+      <span class="summary-leading">
+        <Atom size="14" />
+      </span>
+      <span class="summary-content">
+        <span class="summary-title">{{ toolCallsSummaryTitle }}</span>
+        <span class="summary-separator" v-if="normalizedToolCalls.length > 1 && toolCallsNamesMeta"
+          >·</span
+        >
+        <span class="summary-meta" v-if="normalizedToolCalls.length > 1 && toolCallsNamesMeta">{{
+          toolCallsNamesMeta
+        }}</span>
+      </span>
+    </div>
+
+    <div
+      v-if="canViewToolDetails"
       class="tool-calls-collapse-panel"
       :class="{ 'is-expanded': !shouldCollapseToolCalls || areToolCallsExpanded }"
     >
@@ -60,6 +81,7 @@ import { computed, ref, watch, inject } from 'vue'
 import { ChevronDown, Atom } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import { useAgentStore } from '@/stores/agent'
+import { useUserStore } from '@/stores/user'
 import ReasoningBlockComponent from '@/components/ReasoningBlockComponent.vue'
 import { ToolCallRenderer } from '@/components/ToolCallingResult'
 import {
@@ -72,6 +94,15 @@ import {
 
 const agentStore = useAgentStore()
 const { availableTools, toolMetadata } = storeToRefs(agentStore)
+
+const userStore = useUserStore()
+
+// 工具调用参数细节仅管理员可见（admin/superadmin 角色，或所属「管理员」部门）；
+// 教师/学生/访客类别仅展示工具概要行，不展开命令、参数与输出。
+const canViewToolDetails = computed(() => {
+  if (userStore.isAdmin) return true
+  return String(userStore.departmentName || '').trim() === '管理员'
+})
 
 const activeSubagentToolCallIds = inject('activeSubagentToolCallIds', null)
 
@@ -207,6 +238,11 @@ const toggleToolCallsExpanded = () => {
     transition: color 0.15s ease;
     user-select: none;
     background: transparent;
+
+    &.is-static {
+      cursor: default;
+      user-select: text;
+    }
 
     &:focus-visible {
       outline: 2px solid var(--main-300);

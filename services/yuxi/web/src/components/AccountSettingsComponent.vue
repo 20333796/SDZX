@@ -105,7 +105,7 @@
           <div class="identity-item">
             <span class="identity-icon"><Building2 :size="15" /></span>
             <span class="profile-label">部门</span>
-            <span class="profile-value">{{ userStore.departmentName || '默认部门' }}</span>
+            <span class="profile-value">{{ userStore.departmentName || '未分配部门' }}</span>
           </div>
         </div>
       </div>

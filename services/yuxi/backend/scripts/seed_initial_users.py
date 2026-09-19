@@ -26,13 +26,17 @@ class DepartmentSeed(TypedDict):
     name: str
     description: str
     prefix: str
+    admin_count: int
     normal_count: int
+    account_type: str
 
 
+# 平台标准部门：管理员、教师、学生、访客（与 ensure_standard_departments 保持一致）
 DEPARTMENTS: list[DepartmentSeed] = [
-    {"name": "研发部", "description": "负责产品研发与技术平台建设", "prefix": "dev", "normal_count": 5},
-    {"name": "产品部", "description": "负责产品规划、需求分析与项目推进", "prefix": "prod", "normal_count": 5},
-    {"name": "运营部", "description": "负责业务运营、用户支持与内容维护", "prefix": "ops", "normal_count": 4},
+    {"name": "管理员", "description": "系统管理员所属部门", "prefix": "admin", "admin_count": 1, "normal_count": 0, "account_type": "student"},
+    {"name": "教师", "description": "教师用户所属部门", "prefix": "teacher", "admin_count": 1, "normal_count": 3, "account_type": "teacher"},
+    {"name": "学生", "description": "学生用户所属部门", "prefix": "student", "admin_count": 1, "normal_count": 5, "account_type": "student"},
+    {"name": "访客", "description": "访客用户所属部门", "prefix": "visitor", "admin_count": 0, "normal_count": 2, "account_type": "visitor"},
 ]
 
 
@@ -90,20 +94,21 @@ async def seed_initial_users() -> None:
                     phone_number=SUPERADMIN_PHONE_NUMBER,
                     password_hash=AuthUtils.hash_password(SUPERADMIN_PASSWORD),
                     role="superadmin",
-                    department_id=departments["dev"].id,
+                    department_id=departments["admin"].id,
                     last_login=utc_now_naive(),
                 )
             ]
 
             for department_seed in DEPARTMENTS:
                 department = departments[department_seed["prefix"]]
-                for index in range(1, 3):
+                for index in range(1, department_seed["admin_count"] + 1):
                     users.append(
                         User(
                             username=f"{department_seed['name']}管理员{index}",
                             uid=f"{department_seed['prefix']}_admin_{index}",
                             password_hash=AuthUtils.hash_password(DEFAULT_USER_PASSWORD),
                             role="admin",
+                            account_type=department_seed["account_type"],
                             department_id=department.id,
                         )
                     )
@@ -114,6 +119,7 @@ async def seed_initial_users() -> None:
                             uid=f"{department_seed['prefix']}_user_{index:02d}",
                             password_hash=AuthUtils.hash_password(DEFAULT_USER_PASSWORD),
                             role="user",
+                            account_type=department_seed["account_type"],
                             department_id=department.id,
                         )
                     )
@@ -134,9 +140,12 @@ def main() -> int:
         print(f"初始化种子用户失败：{exc}", file=sys.stderr)
         return 1
 
+    admin_total = sum(d["admin_count"] for d in DEPARTMENTS)
+    normal_total = sum(d["normal_count"] for d in DEPARTMENTS)
     print(
         f"初始化完成：已创建超级管理员 {SUPERADMIN_NAME}（{SUPERADMIN_UID}）、"
-        "3 个部门、6 个部门管理员和 14 个普通用户。"
+        f"{len(DEPARTMENTS)} 个标准部门（{'/'.join(d['name'] for d in DEPARTMENTS)}）、"
+        f"{admin_total} 个部门管理员和 {normal_total} 个普通用户。"
     )
     print("超级管理员密码：zwj12138")
     print("部门管理员和普通用户默认密码：yuxi123456")

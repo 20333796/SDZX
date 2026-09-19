@@ -100,4 +100,4 @@ async def test_superadmin_cannot_delete_default_department(test_client, admin_he
 
     delete_response = await test_client.delete(f"/api/departments/{default_department['id']}", headers=admin_headers)
     assert delete_response.status_code == 400, delete_response.text
-    assert delete_response.json()["detail"] == "默认部门不允许删除"
+    assert delete_response.json()["detail"] == "系统初始部门不允许删除"

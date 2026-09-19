@@ -198,8 +198,8 @@ async def delete_department(
     if not department:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="部门不存在")
 
-    if department.id == 1:  # 默认部门的ID为1
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="默认部门不允许删除")
+    if department.id == 1:  # 系统初始部门（现名「管理员」）的ID固定为1
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="系统初始部门不允许删除")
 
     deletion = await repository.delete_and_migrate_users(department_id)
     if deletion is None:
@@ -207,7 +207,7 @@ async def delete_department(
 
     # 记录操作
     if deletion.migrated_user_count:
-        detail = f"删除部门: {deletion.name}，迁移 {deletion.migrated_user_count} 个用户到默认部门"
+        detail = f"删除部门: {deletion.name}，迁移 {deletion.migrated_user_count} 个用户到系统初始部门"
     else:
         detail = f"删除部门: {deletion.name}"
     await log_operation(db, current_user.id, "删除部门", detail, request)

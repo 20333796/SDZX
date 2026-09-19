@@ -30,8 +30,10 @@ from yuxi.services.login_rate_limit_service import (
     record_login_failure,
 )
 from yuxi.services.identity_admin_service import (
+    ACCOUNT_TYPE_DEPARTMENT,
     IdentityConflictError,
     SystemAlreadyInitializedError,
+    ensure_standard_departments,
     initialize_system_admin,
     list_managed_users_page,
 )
@@ -68,7 +70,7 @@ class Token(BaseModel):
     phone_number: str | None = None
     avatar: str | None = None
     role: str
-    account_type: Literal["student", "teacher"] = "student"
+    account_type: Literal["student", "teacher", "visitor"] = "student"
     department_id: int | None = None
     department_name: str | None = None
 
@@ -103,7 +105,7 @@ class UserResponse(BaseModel):
     phone_number: str | None = None
     avatar: str | None = None
     role: str
-    account_type: Literal["student", "teacher"] = "student"
+    account_type: Literal["student", "teacher", "visitor"] = "student"
     department_id: int | None = None
     department_name: str | None = None  # 部门名称
     created_at: str
@@ -135,7 +137,7 @@ class PublicRegistration(BaseModel):
     username: str
     password: str = Field(min_length=8)
     phone_number: str | None = None
-    account_type: Literal["student", "teacher"]
+    account_type: Literal["student", "teacher", "visitor"]
 
 
 class UsernameValidation(BaseModel):
@@ -476,8 +478,19 @@ async def register_public_user(
             headers={"X-Registration-Conflict": "phone"},
         )
 
-    default_department = await DepartmentRepository(db).get_by_id(1)
-    if default_department is None:
+    # 幂等保障标准部门（管理员/教师/学生/访客）存在，注册类别对应入部
+    await ensure_standard_departments(db)
+
+    department_repository = DepartmentRepository(db)
+    department_name = ACCOUNT_TYPE_DEPARTMENT.get(registration.account_type)
+    target_department = (
+        await department_repository.get_by_name(department_name)
+        if department_name
+        else None
+    )
+    if target_department is None:
+        target_department = await department_repository.get_by_id(1)
+    if target_department is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="默认学习空间尚未初始化，请联系管理员",
@@ -493,7 +506,7 @@ async def register_public_user(
             "password_hash": AuthUtils.hash_password(registration.password),
             "role": "user",
             "account_type": registration.account_type,
-            "department_id": default_department.id,
+            "department_id": target_department.id,
         }
     )
     await log_operation(db, new_user.id, "用户注册", f"用户注册: {new_user.username}", request)
@@ -510,7 +523,7 @@ async def register_public_user(
         "role": new_user.role,
         "account_type": new_user.account_type,
         "department_id": new_user.department_id,
-        "department_name": default_department.name,
+        "department_name": target_department.name,
     }
 
 
@@ -653,13 +666,15 @@ async def create_user(
 
     # 部门分配逻辑
     if current_user.role == "superadmin":
-        # 超级管理员创建用户时，使用指定的部门或默认部门
+        # 超级管理员创建用户时，使用指定的部门或默认部门（id=1，即管理员部门）
         department_id = user_data.department_id
         if department_id is None:
-            # 获取默认部门
             dept_repo = DepartmentRepository(db)
-            departments = await dept_repo.list_departments()
-            default_dept = next((d for d in departments if d.name == "默认部门"), None)
+            default_dept = await dept_repo.get_by_id(1)
+            if default_dept is None:
+                default_dept = next(
+                    (d for d in await dept_repo.list_departments() if d.name == "管理员"), None
+                )
             department_id = default_dept.id if default_dept else None
     else:
         # 普通管理员创建用户时，自动继承该管理员的部门

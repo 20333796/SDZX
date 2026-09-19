@@ -232,7 +232,7 @@ async def test_profile_requires_authentication(test_client):
     assert response.json()["detail"] == "请登录后再访问"
 
 
-async def test_public_registration_assigns_default_department_and_can_load_agents(test_client, admin_headers):
+async def test_public_registration_assigns_category_department_and_can_load_agents(test_client, admin_headers):
     suffix = uuid.uuid4().hex[:8]
     response = await test_client.post(
         "/api/auth/register",
@@ -245,9 +245,21 @@ async def test_public_registration_assigns_default_department_and_can_load_agent
     assert response.status_code == 201, response.text
 
     registered_user = response.json()
-    assert registered_user["department_id"] == 1
-    assert registered_user["department_name"] == "默认部门"
+    assert registered_user["department_name"] == "教师"
     assert registered_user["account_type"] == "teacher"
+
+    visitor_response = await test_client.post(
+        "/api/auth/register",
+        json={
+            "username": f"public_visitor_{suffix}",
+            "password": "publicRegistration123!",
+            "account_type": "visitor",
+        },
+    )
+    assert visitor_response.status_code == 201, visitor_response.text
+    visitor_user = visitor_response.json()
+    assert visitor_user["department_name"] == "访客"
+    assert visitor_user["account_type"] == "visitor"
 
     try:
         agent_response = await test_client.get(
@@ -257,6 +269,7 @@ async def test_public_registration_assigns_default_department_and_can_load_agent
         assert agent_response.status_code == 200, agent_response.text
     finally:
         await _cleanup_user(test_client, admin_headers, registered_user["user_id"])
+        await _cleanup_user(test_client, admin_headers, visitor_user["user_id"])
 
 
 async def test_admin_can_create_and_delete_user(test_client, admin_headers):

@@ -118,6 +118,22 @@ async def _startup(app: FastAPI) -> None:
         operation=initialize_default_agents,
     )
 
+    # 确保标准部门（管理员/教师/学生/访客）存在并归位历史数据
+    async def initialize_standard_departments() -> None:
+        """幂等创建标准部门，历史默认部门重命名为管理员。"""
+
+        from yuxi.services.identity_admin_service import ensure_standard_departments
+
+        async with pg_manager.get_async_session_context() as session:
+            await ensure_standard_departments(session)
+
+    await _initialize_startup_component(
+        app,
+        name="standard_departments",
+        required=False,
+        operation=initialize_standard_departments,
+    )
+
     # 初始化内置模型供应商配置
     async def initialize_model_providers() -> None:
         """确保内置模型供应商定义可以从数据库读取。"""

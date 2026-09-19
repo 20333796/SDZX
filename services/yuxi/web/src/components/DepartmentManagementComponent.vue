@@ -463,7 +463,7 @@ const handleDepartmentFormSubmit = async () => {
 const confirmDeleteDepartment = (department) => {
   Modal.confirm({
     title: '确认删除部门',
-    content: `确定要删除部门 "${department.name}" 吗？此操作不可撤销。该部门下的用户会被迁移到默认部门，部门级配置和部门 API Key 会一并清理。`,
+    content: `确定要删除部门 "${department.name}" 吗？此操作不可撤销。该部门下的用户会被迁移到系统初始部门，部门级配置和部门 API Key 会一并清理。`,
     okText: '删除',
     okType: 'danger',
     cancelText: '取消',

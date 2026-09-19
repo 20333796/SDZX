@@ -32,6 +32,60 @@ class DepartmentAdminCreation:
     admin: User
 
 
+# 平台标准部门：管理员、教师、学生、访客。注册时按所选类别归入对应部门。
+STANDARD_DEPARTMENTS: list[tuple[str, str]] = [
+    ("管理员", "系统管理员所属部门"),
+    ("教师", "教师用户所属部门"),
+    ("学生", "学生用户所属部门"),
+    ("访客", "访客用户所属部门"),
+]
+
+# 注册类别 → 标准部门名
+ACCOUNT_TYPE_DEPARTMENT = {
+    "teacher": "教师",
+    "student": "学生",
+    "visitor": "访客",
+}
+
+
+async def ensure_standard_departments(db: AsyncSession) -> None:
+    """幂等保障四个标准部门存在，并归位历史数据。
+
+    - 历史「默认部门」（id=1）重命名为「管理员」（超级管理员与历史账户所在处）；
+    - 缺失的标准部门按需创建；
+    - id=1 下 role=user 的存量账户按 account_type 迁入教师/学生部门。
+    """
+
+    repo = DepartmentRepository(db)
+    standard_names = {name for name, _ in STANDARD_DEPARTMENTS}
+
+    default_department = await repo.get_by_id(1)
+    if default_department is not None and default_department.name not in standard_names:
+        if not await repo.exists_by_name("管理员"):
+            await repo.update(1, {"name": "管理员", "description": "系统管理员所属部门"})
+            default_department = await repo.get_by_id(1)
+
+    for name, description in STANDARD_DEPARTMENTS:
+        if not await repo.exists_by_name(name):
+            await repo.create({"name": name, "description": description})
+
+    # 存量普通用户按 account_type 迁入对应类别部门（仅处理还挂在 id=1 上的）。
+    if default_department is not None and default_department.name == "管理员":
+        for account_type, department_name in ACCOUNT_TYPE_DEPARTMENT.items():
+            target = await repo.get_by_name(department_name)
+            if target is None or target.id == 1:
+                continue
+            await db.execute(
+                text(
+                    "UPDATE users SET department_id = :target_id "
+                    "WHERE department_id = 1 AND role = 'user' AND account_type = :account_type"
+                ),
+                {"target_id": target.id, "account_type": account_type},
+            )
+
+    await db.commit()
+
+
 async def list_managed_users_page(
     db: AsyncSession,
     *,
@@ -118,7 +172,7 @@ async def initialize_system_admin(
     password: str,
     phone_number: str | None,
 ) -> DepartmentAdminCreation:
-    """串行、原子地创建默认部门、超级管理员和初始化审计。"""
+    """串行、原子地创建管理员部门、超级管理员和初始化审计。"""
 
     password_hash = AuthUtils.hash_password(password)
     try:
@@ -130,12 +184,15 @@ async def initialize_system_admin(
             raise SystemAlreadyInitializedError("系统已经初始化，无法再次创建初始管理员")
 
         try:
-            department = await DepartmentRepository(db).create(
-                {
-                    "name": "默认部门",
-                    "description": "系统初始化时创建的默认部门",
-                }
-            )
+            # 复用 ensure_standard_departments 已建好的「管理员」部门，避免重复部门
+            department = await DepartmentRepository(db).get_by_name("管理员")
+            if department is None:
+                department = await DepartmentRepository(db).create(
+                    {
+                        "name": "管理员",
+                        "description": "系统管理员所属部门",
+                    }
+                )
             admin = await UserRepository(db).create(
                 {
                     "username": uid,
