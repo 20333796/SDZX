@@ -79,7 +79,8 @@ export function useAgentStreamHandler({
   supportsFiles,
   streamSmoother
 }) {
-  const debugPrefix = '[AgentStateDebug]'
+  // 调试日志全部包 DEV：生产构建折叠为空串并被 DCE，控制台不再打印任何流参数。
+  const debugPrefix = import.meta.env.DEV ? '[AgentStateDebug]' : ''
   /**
    * Process a single stream chunk based on its status
    * @param {Object} chunk - The parsed JSON chunk
@@ -187,26 +188,29 @@ export function useAgentStreamHandler({
       case 'human_approval_required':
         streamSmoother?.flushThread(threadId)
         threadState.replyLoadingVisible = false
-        console.log(`${debugPrefix}[approval_required]`, {
-          threadId,
-          currentAgentId: unref(currentAgentId)
-        })
+        if (import.meta.env.DEV)
+          console.log(`${debugPrefix}[approval_required]`, {
+            threadId,
+            currentAgentId: unref(currentAgentId)
+          })
         // 使用审批 composable 处理审批请求
         return processApprovalInStream(chunk, threadId, unref(currentAgentId))
 
       case 'agent_state':
-        console.log(`${debugPrefix}[agent_state_chunk]`, {
-          threadId,
-          supportsFiles: unref(supportsFiles),
-          currentAgentId: unref(currentAgentId),
-          hasAgentState: !!chunk.agent_state,
-          todoCount: Array.isArray(chunk.agent_state?.todos) ? chunk.agent_state.todos.length : 0
-        })
-        if (chunk.agent_state) {
-          console.log(`${debugPrefix}[agent_state_apply]`, {
+        if (import.meta.env.DEV)
+          console.log(`${debugPrefix}[agent_state_chunk]`, {
             threadId,
-            todos: chunk.agent_state?.todos || []
+            supportsFiles: unref(supportsFiles),
+            currentAgentId: unref(currentAgentId),
+            hasAgentState: !!chunk.agent_state,
+            todoCount: Array.isArray(chunk.agent_state?.todos) ? chunk.agent_state.todos.length : 0
           })
+        if (chunk.agent_state) {
+          if (import.meta.env.DEV)
+            console.log(`${debugPrefix}[agent_state_apply]`, {
+              threadId,
+              todos: chunk.agent_state?.todos || []
+            })
           threadState.agentStateRequestVersion = (threadState.agentStateRequestVersion || 0) + 1
           threadState.agentState = chunk.agent_state
         } else {
@@ -219,7 +223,6 @@ export function useAgentStreamHandler({
           })
         }
         return false
-
       case 'context_compression':
         if (chunk.compression) {
           threadState.contextCompressing = chunk.compression.status === 'started'
@@ -235,20 +238,22 @@ export function useAgentStreamHandler({
           threadState.pendingRequestId = null
           threadState.pendingInterrupt = null
           threadState.contextCompressing = false
-          console.log(`${debugPrefix}[finished]`, {
-            threadId,
-            currentAgentId: unref(currentAgentId),
-            hasThreadAgentState: !!threadState.agentState,
-            supportsFiles: unref(supportsFiles)
-          })
+          if (import.meta.env.DEV)
+            console.log(`${debugPrefix}[finished]`, {
+              threadId,
+              currentAgentId: unref(currentAgentId),
+              hasThreadAgentState: !!threadState.agentState,
+              supportsFiles: unref(supportsFiles)
+            })
           if (unref(supportsFiles) && threadState.agentState) {
-            console.log(
-              `[AgentState|Final] ${new Date().toLocaleTimeString()}.${new Date().getMilliseconds()}`,
-              {
-                threadId,
-                todos: threadState.agentState?.todos || []
-              }
-            )
+            if (import.meta.env.DEV)
+              console.log(
+                `[AgentState|Final] ${new Date().toLocaleTimeString()}.${new Date().getMilliseconds()}`,
+                {
+                  threadId,
+                  todos: threadState.agentState?.todos || []
+                }
+              )
           }
         }
         return true

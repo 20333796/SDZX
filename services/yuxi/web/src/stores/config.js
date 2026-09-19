@@ -11,14 +11,14 @@ export const useConfigStore = defineStore('config', () => {
   function setConfigValue(key, value) {
     config.value[key] = value
     configApi.updateConfigBatch({ [key]: value }).then((data) => {
-      console.debug('Success:', data)
+      if (import.meta.env.DEV) console.debug('Success:', data)
       setConfig(data)
     })
   }
 
   async function refreshConfig() {
     const data = await configApi.getConfig()
-    console.log('config', data)
+    if (import.meta.env.DEV) console.log('config', data)
     setConfig(data)
     return data
   }
