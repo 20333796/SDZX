@@ -104,6 +104,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { ExternalLink, Globe, X } from '@lucide/vue'
+import { apiGet } from '@/apis/base'
 
 const props = defineProps({
   /** 当前对话的检索记录列表（由 AgentChatComponent 从本线程消息中提取，不含跨对话缓存） */
@@ -142,7 +143,8 @@ watch(
 
 const openHit = (hit) => {
   if (!hit?.url) return
-  if (shouldPreferExternal(hit.url)) {
+  // 已探明禁止嵌入的站点：直接新窗口打开，不再进侧边栏（同步手势，弹窗不会被拦）
+  if (getCachedEmbedCheck(hit.url) === true) {
     window.open(hit.url, '_blank', 'noopener,noreferrer')
     return
   }
@@ -152,16 +154,54 @@ const openHit = (hit) => {
   frameBlocked.value = false
   iframeKey.value += 1
   armBlockedFallback()
+  void checkEmbeddable(hit.url)
 }
 
-// 明确返回 X-Frame-Options: SAMEORIGIN 的学校官网不能被工作台跨站嵌入。
-// 这类链接直接新窗口打开，其余站点仍先尝试内嵌。
-const shouldPreferExternal = (url) => {
+// —— 内嵌预检（静默）：点击链接进内嵌视图的同时，后台探测该页能否被 iframe 嵌入；
+// 探针明确判定禁止嵌入（X-Frame-Options / CSP frame-ancestors 等）时直接弹新窗口
+// 并回到列表，全程无任何提示 UI。探针超时/网络抖动在代理环境下容易误判，
+// 一律按「可嵌入」保守回退，交由既有的 8s 兜底提示条处理。
+const EMBED_CHECK_TTL = 5 * 60 * 1000
+const embedCheckCache = new Map()
+// 确定性拒绝：响应头禁止嵌入，或 URL 本身不可达（iframe 必然白屏/报错）。
+// timeout / network-error / too-many-redirects 不在此列，视为探测结果未知。
+const DEFINITIVE_DENY_REASONS = new Set([
+  'xfo-deny',
+  'xfo-sameorigin',
+  'csp-frame-ancestors',
+  'invalid-scheme',
+  'invalid-url',
+  'dns-failure',
+  'intranet-or-reserved-ip'
+])
+
+const getCachedEmbedCheck = (url) => {
+  const cached = embedCheckCache.get(url)
+  if (!cached) return null
+  if (Date.now() - cached.ts >= EMBED_CHECK_TTL) {
+    embedCheckCache.delete(url)
+    return null
+  }
+  return cached.denied
+}
+
+// 静默探测：denied 且用户仍在内嵌浏览同一 URL → 新窗口打开，成功即回列表；
+// 弹窗被拦（win 为 null）时留在内嵌视图，由 8s 兜底提示条接管。
+const checkEmbeddable = async (url) => {
+  let denied = false
   try {
-    const parsed = new URL(url)
-    return parsed.hostname === 'www.cup.edu.cn'
+    const query = new URLSearchParams({ url })
+    const data = await apiGet(`/api/tools/url-embed-check?${query.toString()}`)
+    denied =
+      data?.embeddable === false &&
+      DEFINITIVE_DENY_REASONS.has(String(data?.reason || ''))
   } catch {
-    return false
+    return // 探针不可用：照旧内嵌
+  }
+  embedCheckCache.set(url, { denied, ts: Date.now() })
+  if (denied && browsingUrl.value === url) {
+    const win = window.open(url, '_blank', 'noopener,noreferrer')
+    if (win) closeBrowse()
   }
 }
 
@@ -194,7 +234,8 @@ const armBlockedFallback = () => {
 // 为 null 且 load 正常触发，与正常跨域页完全不可区分）：
 // 1) load 迟迟不来 → 8s 兜底（网络不通/极慢）；
 // 2) 同源空白文档（href 为 ''/about:blank 且无子元素）→ 200ms + 800ms 双检。
-// 更多站点级拒绝（X-Frame-Options 等）无法在前端可靠感知，交给工具条上的「在新窗口打开」。
+// 站点级嵌入拒绝（X-Frame-Options 等）由后台静默探针判定，命中即直接新窗口；
+// 探测不到的场景兜底为提示条 + 手动「在新窗口打开」。
 const checkFrameBlank = () => {
   try {
     const doc = frameRef.value?.contentDocument
