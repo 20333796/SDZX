@@ -543,6 +543,35 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   background: radial-gradient(closest-side, rgba(64, 158, 232, .26), rgba(64, 158, 232, 0) 76%);
   animation: hero-aurora-drift 27s ease-in-out infinite alternate-reverse;
 }
+/* 首页问答背景：实景三维地层剖面图（深海钻井/层析块）压在全部绘制层之下作底图。
+   融合做两层：① 照片上先罩一道 132° 品牌蓝洗色（低透明度统一色相，压住照片中部的
+   土黄沙漠色调）；② ::after 一道三段式纵向渐变——顶部加深保导航白字可读、中部最透
+   让剖面主体露出来、底部渐入深海蓝与下方课程图谱自然衔接。照片层 z-index -3，位于
+   极光(-2)/地层带·微粒(-1)之下、hero-shell 品牌渐变底（元素自身背景）之上——图片
+   加载失败时旧渐变底自动兜底。 */
+.hero-photo {
+  position: absolute; z-index: -3; inset: 0; pointer-events: none;
+  background: url('/hero-geology.jpg') center 42% / cover no-repeat;
+  filter: saturate(.96);
+}
+.hero-photo::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(3, 38, 84, .8) 0%,
+      rgba(5, 58, 118, .36) 20%,
+      rgba(7, 84, 161, .22) 46%,
+      rgba(4, 42, 100, .55) 78%,
+      rgba(2, 20, 52, .88) 100%),
+    linear-gradient(132deg, rgba(7, 84, 161, .42) 0%, rgba(8, 120, 191, .3) 49%, rgba(3, 52, 104, .46) 100%);
+}
+/* 照片底图上岗后：等高线环/极光/地层带是围绕纯渐变底设计的，叠在实景照片上互相
+   打架，全部下线（元素保留在模板里，随时可恢复）；只留跃动微粒——白点在压暗后的
+   照片上读作矿物颗粒/数据星点，hero 的生命感由它维持。 */
+.hero-shell::before,
+.topographic-lines,
+.hero-aurora,
+.geo-stratum { display: none; }
 /* 深部地层剖面：四条层界带自下而上堆叠——层界面（border-top 亮线 + 往复扫光）清晰可辨、
    随深度加深变暗，层内叠细密沉积层理纹理（::before）。各以 12/16/20/26s 错拍缓移、相邻层
    倾向相反；层界面（::after）只做明暗呼吸，不再有任何横向掠光（用户要求去掉左→右闪动的光线）。

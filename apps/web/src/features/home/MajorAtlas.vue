@@ -17,17 +17,25 @@ let sectionObserver: IntersectionObserver | undefined
 let spinObserver: IntersectionObserver | undefined
 let revealTimer: number | undefined
 const courseTypes = [
-  { label: '全部', count: 12 },
+  { label: '全部', count: 16 },
   { label: '专业基础课', count: 4 },
   { label: '公共基础课', count: 1 },
-  { label: '专业必修课', count: 5 },
+  { label: '专业必修课', count: 9 },
   { label: '专业选修课', count: 2 }
 ]
 const courses: Course[] = [
   { term: '第八学期', title: '油气田勘探', type: '专业基础课', required: '必学', credits: '2.5学分', image: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=960&q=85' },
   { term: '第四学期', title: '油矿地质学', type: '专业基础课', required: '必学', credits: '4学分', image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=960&q=85' },
   { term: '第三学期', title: '沉积岩石学', type: '专业基础课', required: '必学', credits: '3学分', image: 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?auto=format&fit=crop&w=960&q=85' },
-  { term: '第五学期', title: '地球物理测井', type: '专业必修课', required: '必学', credits: '3学分', image: 'https://images.unsplash.com/photo-1518098268026-4e89f1a2cd8e?auto=format&fit=crop&w=960&q=85' },
+  { term: '第五学期', title: '地球物理测井', type: '专业必修课', required: '必学', credits: '4学分', image: 'https://images.unsplash.com/photo-1518098268026-4e89f1a2cd8e?auto=format&fit=crop&w=960&q=85' },
+  // 以下 3 门取自超星「地球物理学」智慧课程群（5o2hyk4q.mh.chaoxing.com，2026-09 对接）：
+  // 课程群 CMS 数据：地震波动力学(陈汉明)/地震勘探原理(刘洋)/地球物理测井(谢然红)/弹性波动力学(唐跟阳)。
+  // 地球物理测井已在上方列表；学分按课程群数据修正，学期仍为编排列位。
+  { term: '第五学期', title: '弹性波动力学', type: '专业必修课', required: '必学', credits: '4学分', image: 'https://images.unsplash.com/photo-1439405326854-014607f694d7?auto=format&fit=crop&w=960&q=85' },
+  { term: '第六学期', title: '地震波动力学', type: '专业必修课', required: '必学', credits: '3学分', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=960&q=85' },
+  { term: '第六学期', title: '地震勘探原理', type: '专业必修课', required: '必学', credits: '4学分', image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=960&q=85' },
+  // 地震资料数字处理：学院在线课程建设情况（本科）文档中的地球物理国家级一流课程，2026-09 补录
+  { term: '第七学期', title: '地震资料数字处理', type: '专业必修课', required: '必学', credits: '3学分', image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=960&q=85' },
   { term: '第二学期', title: '造岩矿物学', type: '专业基础课', required: '必学', credits: '3.5学分', image: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=960&q=85' },
   { term: '第六学期', title: '储层表征与建模', type: '专业必修课', required: '必学', credits: '2学分', image: 'https://images.unsplash.com/photo-1458966480358-a0ac42de0a7a?auto=format&fit=crop&w=960&q=85' },
   { term: '第七学期', title: '油气地震勘探实践', type: '专业选修课', required: '选学', credits: '2学分', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=960&q=85' },
@@ -689,7 +697,7 @@ onBeforeUnmount(() => {
         <div class="atlas-title">
           <span class="atlas-ring" aria-hidden="true"></span>
           <h2>课程大图谱</h2>
-          <p><b>AI</b> 当前课程家族共 <strong>12</strong> 门课程，其中 <strong>5</strong> 门已建设知识图谱</p>
+          <p><b>AI</b> 当前课程家族共 <strong>16</strong> 门智慧课程，其中 <strong>5</strong> 门已建设知识图谱</p>
         </div>
         <button class="atlas-explore" @click="openResources">去探索 <ArrowRight :size="17" /></button>
       </header>

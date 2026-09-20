@@ -119,6 +119,9 @@ onBeforeUnmount(() => {
   <main>
     <div ref="deck" class="deck">
       <section id="slide-home" class="deck-slide hero-shell" aria-label="首页 · 智慧问答">
+        <!-- 实景地质剖面图（深海钻井/三维地层块）：压在全部绘制层之下作hero底图，
+             蓝调渐变罩负责与品牌色融合、保证文字可读（见 styles.css .hero-photo）。 -->
+        <div class="hero-photo" aria-hidden="true"></div>
         <div class="topographic-lines" aria-hidden="true"></div>
         <!-- Drawn scene layers (see styles.css "The hero scene is drawn, not photographed"): the two
              aurora blobs drift behind the contour rings to keep the hero alive without a photo. -->
@@ -202,7 +205,7 @@ onBeforeUnmount(() => {
             <span aria-hidden="true"></span>
             <small>CHINA UNIVERSITY OF PETROLEUM, BEIJING</small>
           </div>
-          <h1>深地智学</h1>
+          <h1>智赋深地</h1>
           <p class="hero-subtitle">地质资源与地质工程学科教育大模型</p>
 
           <div class="qa-stage">
