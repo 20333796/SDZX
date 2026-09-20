@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { buildGeoChatAgentUrl } from '@/config/geochat'
+import { buildGeoChatWorkbenchUrl } from '@/config/geochat'
 
 const route = useRoute()
 
 onMounted(() => {
   const question = typeof route.query.q === 'string' ? route.query.q : ''
-  const mode = typeof route.query.mode === 'string' ? route.query.mode : 'conversation'
-  window.location.replace(buildGeoChatAgentUrl(question, mode))
+  window.location.replace(buildGeoChatWorkbenchUrl(question))
 })
 </script>
 

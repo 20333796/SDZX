@@ -3,12 +3,12 @@
     <!-- 列表视图 -->
     <template v-if="!browsingUrl">
       <div class="retrieval-panel__header">
-        <span class="retrieval-panel__title">最近检索</span>
+        <span class="retrieval-panel__title">外部网页访问</span>
         <button
           type="button"
           class="retrieval-panel__close"
           title="关闭"
-          aria-label="关闭最近检索面板"
+          aria-label="关闭外部网页访问面板"
           @click.stop="emit('close')"
         >
           <X :size="14" />
@@ -16,9 +16,9 @@
       </div>
 
       <div class="retrieval-panel__body">
-        <!-- 最近检索（仅网络搜索） -->
+        <!-- 仅展示实际访问过的外部网页。 -->
         <section class="retrieval-section">
-          <div v-if="!records.length" class="retrieval-empty">暂无检索记录</div>
+          <div v-if="!records.length" class="retrieval-empty">暂无外部网页访问记录</div>
           <div v-else class="record-list">
             <article v-for="record in records" :key="record.key" class="record-card">
               <div class="record-card__head">
@@ -133,33 +133,32 @@ let blockedCheckTimer = null
 // 浏览状态上报给父组件，由父组件统一控制面板宽度（避免与父级样式优先级打架）
 watch(browsingUrl, (value) => emit('browsing-change', Boolean(value)))
 
-// 消息正文链接 → 面板内嵌打开
-watch(
-  () => props.pendingLink,
-  (link) => {
-    if (link?.url) openHit({ url: link.url, label: link.title || '' })
-  }
-)
-
 const openHit = (hit) => {
   if (!hit?.url) return
+  const cachedEmbedCheck = getCachedEmbedCheck(hit.url)
   // 已探明禁止嵌入的站点：直接新窗口打开，不再进侧边栏（同步手势，弹窗不会被拦）
-  if (getCachedEmbedCheck(hit.url) === true) {
-    const win = window.open(hit.url, '_blank', 'noopener,noreferrer')
-    if (win) {
+  if (cachedEmbedCheck === true) {
+    if (
+      openExternalWindow(hit.url, () => {
+        closeBrowse()
+        emit('close')
+      })
+    ) {
       // 二选一：新窗口已打开，整个面板收起，不再留侧边栏
-      emit('close')
       return
     }
     // 弹窗被拦：回退进内嵌视图，由 8s 兜底提示条接管
   }
+  // 首次访问时先在当前点击手势内保留窗口。探测允许嵌入会立即关闭它；
+  // 探测拒绝时再导航该窗口，避免异步 window.open 被浏览器拦截。
+  const reservedWindow = cachedEmbedCheck === null ? reserveExternalWindow() : null
   browsingUrl.value = hit.url
   browsingTitle.value = hit.label || ''
   iframeLoading.value = true
   frameBlocked.value = false
   iframeKey.value += 1
   armBlockedFallback()
-  void checkEmbeddable(hit.url)
+  void checkEmbeddable(hit.url, reservedWindow)
 }
 
 // —— 内嵌预检（静默）：点击链接进内嵌视图的同时，后台探测该页能否被 iframe 嵌入；
@@ -190,10 +189,28 @@ const getCachedEmbedCheck = (url) => {
   return cached.denied
 }
 
+const reserveExternalWindow = () => {
+  const targetWindow = window.open('about:blank', '_blank')
+  if (!targetWindow) return null
+
+  targetWindow.opener = null
+  return targetWindow
+}
+
+const navigateExternalWindow = (targetWindow, url, onOpened) => {
+  if (!targetWindow || targetWindow.closed) return false
+  onOpened?.()
+  targetWindow.location.replace(url)
+  return true
+}
+
+const openExternalWindow = (url, onOpened) =>
+  navigateExternalWindow(reserveExternalWindow(), url, onOpened)
+
 // 静默探测：denied 且用户仍在内嵌浏览同一 URL → 新窗口打开，成功即关闭整个
 // 面板（二选一：新窗口与侧边栏不同时出现）；弹窗被拦（win 为 null）时留在
 // 内嵌视图，由 8s 兜底提示条接管。
-const checkEmbeddable = async (url) => {
+const checkEmbeddable = async (url, reservedWindow = null) => {
   let denied = false
   try {
     const query = new URLSearchParams({ url })
@@ -202,15 +219,17 @@ const checkEmbeddable = async (url) => {
       data?.embeddable === false &&
       DEFINITIVE_DENY_REASONS.has(String(data?.reason || ''))
   } catch {
+    reservedWindow?.close()
     return // 探针不可用：照旧内嵌
   }
   embedCheckCache.set(url, { denied, ts: Date.now() })
   if (denied && browsingUrl.value === url) {
-    const win = window.open(url, '_blank', 'noopener,noreferrer')
-    if (win) {
+    navigateExternalWindow(reservedWindow, url, () => {
       closeBrowse()
       emit('close')
-    }
+    })
+  } else {
+    reservedWindow?.close()
   }
 }
 
@@ -227,7 +246,10 @@ const closeBrowse = () => {
 
 const openInNewWindow = () => {
   if (!browsingUrl.value) return
-  window.open(browsingUrl.value, '_blank', 'noopener,noreferrer')
+  openExternalWindow(browsingUrl.value, () => {
+    closeBrowse()
+    emit('close')
+  })
 }
 
 // load 迟迟不来（网络不通/极慢）时的兜底引导
@@ -272,6 +294,15 @@ const handleFrameLoad = () => {
     }
   }, 200)
 }
+
+// 消息正文链接 → 面板内嵌打开。面板在窄屏下按需挂载，因此首次链接也要立即处理。
+watch(
+  () => props.pendingLink,
+  (link) => {
+    if (link?.url) openHit({ url: link.url, label: link.title || '' })
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="less">

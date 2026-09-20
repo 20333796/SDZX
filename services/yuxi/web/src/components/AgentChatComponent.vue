@@ -794,7 +794,7 @@
           :class="['retrieval-side-panel', { 'is-browsing': isPanelBrowsing }]"
           :records="retrievalRecords"
           :pending-link="pendingPanelLink"
-          @close="isRetrievalPanelOpen = false"
+          @close="closeRetrievalPanel"
           @browsing-change="isPanelBrowsing = $event"
         />
       </div>
@@ -901,7 +901,6 @@ import { AgentValidator } from '@/utils/agentValidator'
 import {
   extractPageTitle,
   extractPageSummary,
-  pickSearchSummary,
   toolResultContentText
 } from '@/utils/retrievalExtract'
 import { useAgentStore } from '@/stores/agent'
@@ -1083,6 +1082,11 @@ const sideActive = computed(() => {
 const isRetrievalPanelOpen = ref(
   typeof window !== 'undefined' ? window.innerWidth >= 1280 : false
 )
+const closeRetrievalPanel = () => {
+  isRetrievalPanelOpen.value = false
+  isPanelBrowsing.value = false
+  pendingPanelLink.value = null
+}
 const toggleRetrievalPanel = () => {
   const nextOpen = !isRetrievalPanelOpen.value
   isRetrievalPanelOpen.value = nextOpen
@@ -2372,32 +2376,13 @@ const conversationRows = computed(() => {
   return rows
 })
 
-// ==================== 检索记录提取（右侧检索面板：网络搜索 + 网页访问 + 知识库检索） ====================
-const WEB_SEARCH_TOOL_KEYWORDS = ['web_search', 'tavily_search', 'doubao_search']
+// ==================== 外部网页访问记录提取（右侧面板） ====================
 const WEB_FETCH_TOOL_KEYWORDS = ['execute']
-// 知识库检索类：query_kb 检索内容片段、search_file 按名搜文件、find_kb_document 文档内定位
-const KB_RETRIEVAL_TOOL_NAMES = new Set(['query_kb', 'search_file', 'find_kb_document'])
 const MAX_RETRIEVAL_RECORDS = 50
 const MAX_RECORD_HITS = 3
 
-const isWebSearchToolName = (toolName) =>
-  WEB_SEARCH_TOOL_KEYWORDS.some((keyword) => toolName.includes(keyword))
-
 const isWebFetchToolName = (toolName) =>
   WEB_FETCH_TOOL_KEYWORDS.some((keyword) => toolName.includes(keyword))
-
-const parseToolResultJson = (content) => {
-  if (!content) return null
-  if (typeof content === 'object') return content
-  if (typeof content !== 'string') return null
-  const trimmed = content.trim()
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null
-  try {
-    return JSON.parse(trimmed)
-  } catch {
-    return null
-  }
-}
 
 // 从 execute 类工具的命令参数里提取被访问的 http(s) 网址（过滤本机地址）。
 const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i
@@ -2441,11 +2426,9 @@ const formatRecordTime = (createdAt) => {
   return time.isSame(now, 'day') ? time.format('HH:mm') : time.format('MM-DD HH:mm')
 }
 
-// 从一批消息里提取「最近检索」记录并追加到 records（按 seenKeys 去重）。
-// 收录三类：网络搜索（web_search / tavily_search / doubao_search 及变体）、
-// 网页访问（execute 等命令工具里携带 http(s) 网址的调用，如 curl 抓取网页）、
-// 知识库检索（query_kb / search_file / find_kb_document，子智能体最常见的检索形态）。
-// 本地文件读写等纯操作不在此面板罗列。
+// 从一批消息里提取实际外部网页访问记录并追加到 records（按 seenKeys 去重）。
+// 仅收录 execute 等命令工具中携带 http(s) 网址的调用，例如 curl 抓取网页；
+// 网络搜索、知识库检索及本地文件操作不会出现在这个面板中。
 const pushRetrievalRecordsFromMessages = (messages, records, seenKeys) => {
   if (!Array.isArray(messages)) return
   messages.forEach((msg) => {
@@ -2458,23 +2441,7 @@ const pushRetrievalRecordsFromMessages = (messages, records, seenKeys) => {
       let title = ''
       let hits = []
 
-      if (isWebSearchToolName(toolName)) {
-        const args = parseToolCallArgs(toolCall)
-        const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
-        const rawResults = Array.isArray(parsedResult?.results) ? parsedResult.results : []
-
-        hits = []
-        for (const item of rawResults) {
-          const hitTitle = typeof item?.title === 'string' ? item.title.trim() : ''
-          const url = typeof item?.url === 'string' ? item.url.trim() : ''
-          if (!hitTitle || !url) continue
-          // 概述：结果条目的 content/snippet 等字段（不同引擎字段名不一，pickSearchSummary 兜底）
-          hits.push({ key: url, type: 'url', label: hitTitle, url, summary: pickSearchSummary(item) })
-        }
-        if (!hits.length) return
-        kindLabel = '网络搜索'
-        title = String(args?.query || parsedResult?.query || toolName).trim()
-      } else if (isWebFetchToolName(toolName)) {
+      if (isWebFetchToolName(toolName)) {
         hits = extractWebFetchHits(toolCall)
         if (!hits.length) return
         kindLabel = '网页访问'
@@ -2490,58 +2457,6 @@ const pushRetrievalRecordsFromMessages = (messages, records, seenKeys) => {
           title = hits[0].label
           if (pageSummary) hits = hits.map((hit) => ({ ...hit, summary: pageSummary }))
         }
-      } else if (KB_RETRIEVAL_TOOL_NAMES.has(toolName)) {
-        // 知识库检索（子智能体最常用的检索形态）：query_kb / search_file / find_kb_document
-        const args = parseToolCallArgs(toolCall)
-        const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
-        kindLabel = '知识库检索'
-        hits = []
-        if (toolName === 'query_kb') {
-          title = String(args?.query_text || args?.query || toolName).trim()
-          const items = Array.isArray(parsedResult?.chunks)
-            ? parsedResult.chunks
-            : Array.isArray(parsedResult?.results)
-              ? parsedResult.results
-              : []
-          for (const item of items) {
-            const meta = item?.metadata || {}
-            const label =
-              String(meta.file_name || meta.filename || item?.file_name || item?.filename || item?.doc_title || '知识库片段').trim() ||
-              '知识库片段'
-            const summary = pickSearchSummary(item)
-            hits.push({ key: `${item?.file_id || item?.chunk_id || label}-${hits.length}`, type: 'kb', label, summary })
-          }
-        } else if (toolName === 'search_file') {
-          title = String(args?.query || args?.keyword || toolName).trim()
-          const files = Array.isArray(parsedResult?.files) ? parsedResult.files : []
-          for (const file of files) {
-            const label = String(file?.filename || file?.file_name || '未命名文件').trim()
-            if (!label) continue
-            hits.push({ key: `${file?.file_id || label}-${hits.length}`, type: 'kb', label, summary: '' })
-          }
-        } else {
-          // find_kb_document：在已知文档内按关键词/正则定位
-          const patterns = Array.isArray(args?.patterns)
-            ? args.patterns.filter((p) => typeof p === 'string' && p.trim())
-            : []
-          title = patterns.length ? patterns.join(' / ') : String(args?.file_id || toolName).trim()
-          const windows = Array.isArray(parsedResult?.windows) ? parsedResult.windows : []
-          for (const win of windows) {
-            const label =
-              String(win?.title || win?.heading || win?.label || (typeof win?.line === 'number' ? `第 ${win.line} 行附近` : '') || '定位片段').trim() ||
-              '定位片段'
-            const summary =
-              typeof win?.content === 'string'
-                ? win.content.slice(0, 120)
-                : typeof win?.text === 'string'
-                  ? win.text.slice(0, 120)
-                  : ''
-            hits.push({ key: `win-${hits.length}`, type: 'kb', label, summary })
-          }
-        }
-        // 无结果也保留记录（title 兜底 toolName 前已判空）：检索发生过就该显示
-        if (!title) return
-        hits = hits.filter((hit) => hit.label)
       } else {
         return
       }
@@ -3958,9 +3873,20 @@ const buildExportPayload = () => {
   return payload
 }
 
+const submitInitialPrompt = async (prompt) => {
+  const text = String(prompt || '').trim()
+  if (!text || currentChatId.value || !currentAgent.value) return false
+
+  userInput.value = text
+  await nextTick()
+  await handleSendMessage()
+  return true
+}
+
 defineExpose({
   getExportPayload: buildExportPayload,
-  selectThreadFromRoute
+  selectThreadFromRoute,
+  submitInitialPrompt
 })
 
 const handleAgentStateRefresh = async (threadId = null) => {

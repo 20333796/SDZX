@@ -1,5 +1,5 @@
 <template>
-  <BaseToolCall :tool-call="toolCall" :hide-params="true">
+  <BaseToolCall :tool-call="toolCall" :hide-params="true" :summary-only="true">
     <template #header>
       <div class="sep-header">
         <span class="note">{{ operationLabel }}</span>

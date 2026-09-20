@@ -55,13 +55,12 @@ h1 span { color: #a9d8ff; }
 
 .experience-card { padding: 22px 25px 30px; }
 .experience-card > h2 { margin: 0; padding-bottom: 18px; border-bottom: 1px solid var(--border); color: #2e3b4c; font-size: 1rem; line-height: 1.6; font-weight: 600; }
-.experience-content { padding-top: 30px; text-align: center; }
-.experience-icon { display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto 22px; border: 1px solid #e0ebff; border-radius: 20px; background: linear-gradient(145deg, #f2f7ff, #e9f1ff); color: #3a72db; }
-.experience-content h3 { margin: 0 0 10px; font-size: 1.0625rem; font-weight: 600; line-height: 1.7; }
-.experience-content p { margin: 0; color: #687589; font-size: .875rem; line-height: 1.9; }
-.experience-link { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; margin-top: 27px; padding: 11px 31px; border-radius: 30px; background: linear-gradient(120deg, #4b31d2, #1747cd); color: white; font-size: .9375rem; font-weight: 500; line-height: 1.5; text-decoration: none; box-shadow: 0 4px 10px #324cce16; transition: background .2s, box-shadow .2s, transform .2s; }
-.experience-link:hover { background: linear-gradient(120deg, #6141df, #1f5ddc); box-shadow: 0 6px 16px #324cce28; transform: translateY(-1px); }
+.experience-content { padding-top: 24px; text-align: center; }
+.experience-link { display: block; overflow: hidden; margin: 0; border-radius: 8px; background: #d5dde7; color: inherit; text-decoration: none; box-shadow: 0 5px 18px #18314d1a; transition: box-shadow .2s, transform .2s; }
+.experience-link img { display: block; width: 100%; height: auto; aspect-ratio: 1046 / 695; object-fit: cover; }
+.experience-link:hover { box-shadow: 0 10px 24px #18314d2b; transform: translateY(-2px); }
 .experience-link:active { transform: translateY(0); }
+.experience-link:focus-visible { outline: 3px solid #2765d8; outline-offset: 3px; }
 
 dialog { position: fixed; width: min(420px, calc(100% - 40px)); padding: 34px; border: 1px solid var(--border); border-radius: 14px; color: var(--ink); background: white; box-shadow: 0 20px 80px #20385b20; }
 dialog::backdrop { background: #16314e55; backdrop-filter: blur(3px); }
@@ -95,7 +94,7 @@ dialog p { color: var(--body); font-size: 1rem; line-height: 1.8; }
   .tab-panel h2 { font-size: 1.125rem; }
   .experience-card { padding: 22px 24px 30px; }
   .experience-content { padding-top: 24px; }
-  .experience-link { min-width: 170px; }
+  .experience-link { width: 100%; }
 }
 @media (max-width: 400px) {
   h1 { font-size: 1.6rem; }

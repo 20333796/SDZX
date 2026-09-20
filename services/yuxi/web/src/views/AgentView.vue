@@ -166,6 +166,31 @@ const portalQuestion = computed(() => {
   return typeof value === 'string' ? value.trim() : ''
 })
 
+const consumedPortalQuestion = ref('')
+const portalQuestionSending = ref(false)
+
+const consumePortalQuestion = async () => {
+  const question = portalQuestion.value
+  const chatComponent = chatComponentRef.value
+  if (
+    !question ||
+    getRouteThreadId() ||
+    portalQuestionSending.value ||
+    consumedPortalQuestion.value === question ||
+    !chatComponent?.submitInitialPrompt
+  ) {
+    return
+  }
+
+  portalQuestionSending.value = true
+  try {
+    const accepted = await chatComponent.submitInitialPrompt(question)
+    if (accepted) consumedPortalQuestion.value = question
+  } finally {
+    portalQuestionSending.value = false
+  }
+}
+
 const syncSelectedThreadFromRoute = async () => {
   const chatComponent = chatComponentRef.value
   if (!chatComponent?.selectThreadFromRoute) return
@@ -181,6 +206,8 @@ const syncSelectedThreadFromRoute = async () => {
     if (ok === null) return
     if (threadId && !ok) {
       await router.replace({ name: 'AgentComp' })
+    } else if (!threadId && ok) {
+      await consumePortalQuestion()
     }
   } catch (error) {
     handleChatError(error, 'load')
@@ -212,7 +239,7 @@ const consumeRouteAgentSelection = async () => {
 }
 
 watch(
-  () => route.params.thread_id,
+  () => [route.params.thread_id, route.query.portal_question],
   () => {
     syncSelectedThreadFromRoute()
   },
@@ -231,6 +258,14 @@ watch(chatComponentRef, (instance) => {
   if (!instance) return
   syncSelectedThreadFromRoute()
 })
+
+watch(
+  [selectedAgentId, () => agents.value.length, chatComponentRef],
+  ([agentId, agentCount, chatComponent]) => {
+    if (!agentId || !agentCount || !chatComponent) return
+    void consumePortalQuestion()
+  }
+)
 
 const handleThreadChange = (threadId) => {
   if (syncingRouteThread.value) return

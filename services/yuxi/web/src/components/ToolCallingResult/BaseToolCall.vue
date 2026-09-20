@@ -6,9 +6,10 @@
     <!-- Header Slot -->
     <div
       class="tool-header"
-      role="button"
-      tabindex="0"
-      :aria-expanded="isExpanded"
+      :class="{ 'is-summary-only': summaryOnly }"
+      :role="summaryOnly ? undefined : 'button'"
+      :tabindex="summaryOnly ? undefined : 0"
+      :aria-expanded="summaryOnly ? undefined : isExpanded"
       @click="toggleExpand"
       @keydown.enter.self="toggleExpand"
       @keydown.space.self.prevent="toggleExpand"
@@ -62,7 +63,7 @@
       </div>
 
       <!-- Fixed Expand Icon -->
-      <span class="tool-expand-icon">
+      <span v-if="!summaryOnly" class="tool-expand-icon">
         <ChevronsDownUp v-if="isExpanded" size="14" />
         <ChevronsUpDown v-else size="14" />
       </span>
@@ -70,7 +71,7 @@
 
     <!-- Content Area -->
     <CollapseTransition>
-      <div v-if="isExpanded" class="tool-content">
+      <div v-if="isExpanded && !summaryOnly" class="tool-content">
         <!-- Params Slot -->
         <div class="tool-params" v-if="hasParams && !paramsHidden">
           <slot name="params" :tool-call="toolCall" :args="formattedArgs">
@@ -152,6 +153,11 @@ const props = defineProps({
   forceShowResult: {
     type: Boolean,
     default: false
+  },
+  // 仅展示工具摘要行，不允许在聊天流展开原始参数或结果。
+  summaryOnly: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -171,6 +177,7 @@ const isExpanded = ref(props.defaultExpanded)
 const isTimeline = computed(() => props.appearance === 'timeline')
 
 const toggleExpand = () => {
+  if (props.summaryOnly) return
   isExpanded.value = !isExpanded.value
 }
 
@@ -287,6 +294,14 @@ const formatResultData = (data) => {
 
     &:hover {
       background-color: var(--gray-25);
+    }
+
+    &.is-summary-only {
+      cursor: default;
+
+      &:hover {
+        background-color: transparent;
+      }
     }
 
     & > span {

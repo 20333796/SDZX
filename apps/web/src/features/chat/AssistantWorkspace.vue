@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { ChevronDown, Compass, Layers3, LoaderCircle, Search, SendHorizontal, Sparkles } from '@lucide/vue'
 import type { ChatResourceReference, Citation } from '@/types'
-import { buildGeoChatAgentUrl } from '@/config/geochat'
+import { buildGeoChatWorkbenchUrl } from '@/config/geochat'
 
 type ChatMode = 'conversation' | 'search' | 'inquiry'
 type ChatMessage = { role: 'assistant' | 'user'; content: string; citations?: Citation[]; resources?: ChatResourceReference[] }
@@ -60,7 +60,7 @@ async function sendQuestion() {
   if (!question || loading.value) return
 
   if (props.landing) {
-    window.location.assign(buildGeoChatAgentUrl(question, mode.value))
+    window.location.assign(buildGeoChatWorkbenchUrl(question))
     return
   }
 

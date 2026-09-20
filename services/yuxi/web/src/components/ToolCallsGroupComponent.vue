@@ -1,7 +1,7 @@
 <template>
   <div v-if="displayEntries.length > 0" class="tool-calls-container">
     <button
-      v-if="shouldCollapseToolCalls"
+      v-if="shouldCollapseToolCalls && !isKnowledgeSummaryGroup"
       type="button"
       class="tool-calls-summary"
       :class="{ 'is-expanded': areToolCallsExpanded }"
@@ -32,7 +32,10 @@
 
     <div
       class="tool-calls-collapse-panel"
-      :class="{ 'is-expanded': !shouldCollapseToolCalls || areToolCallsExpanded }"
+      :class="{
+        'is-expanded': !shouldCollapseToolCalls || areToolCallsExpanded || isKnowledgeSummaryGroup,
+        'is-knowledge-summary-group': isKnowledgeSummaryGroup
+      }"
     >
       <div class="tool-calls-collapse-inner">
         <div class="tool-calls-panel">
@@ -116,6 +119,22 @@ const displayEntries = computed(() =>
         key: toolCall.id || `${getToolCallId(toolCall)}-${index}`,
         toolCall
       }))
+)
+
+// 知识库原始命中片段仅用于智能体推理和答案溯源，不在聊天流展示文件、行号和片段细节。
+const KNOWLEDGE_SUMMARY_TOOL_IDS = new Set([
+  'query_kb',
+  'search_file',
+  'find_kb_document',
+  'open_kb_document'
+])
+const isKnowledgeSummaryGroup = computed(
+  () =>
+    !hasReasoning.value &&
+    normalizedToolCalls.value.length > 0 &&
+    normalizedToolCalls.value.every((toolCall) =>
+      KNOWLEDGE_SUMMARY_TOOL_IDS.has(getToolCallId(toolCall))
+    )
 )
 const hasReasoning = computed(() =>
   displayEntries.value.some((entry) => entry.type === 'reasoning')
@@ -332,6 +351,15 @@ const toggleToolCallsExpanded = () => {
   .tool-calls-collapse-panel.is-expanded .tool-calls-collapse-inner {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  .tool-calls-collapse-panel.is-knowledge-summary-group {
+    .tool-calls-panel {
+      border-top: none;
+      padding-top: 0;
+      margin-top: 0;
+      margin-bottom: 4px;
+    }
   }
 
   .tool-calls-panel {
