@@ -10,7 +10,10 @@ const open = ref(false)
 const prompt = ref('')
 const focused = ref(false)
 const greeting = ref('')
-const greetingText = 'Hi，我是地智——你的地质资源与地质工程学科 AI 学习助手。\n想从哪里开始？'
+// 「地质资源」后显式换行：这行的自然宽度 ~14em，而气泡可用宽度曾只有 ~13.6em，浏览器只能把
+// 放不下的「助手」甩成孤行（用户截图的错误换行）。断点写进文本里，任何视口、任何字体回退下
+// 都不会漂移；配合下方 15.2vw 的宽度给两行各留出余量。
+const greetingText = 'Hi，我是地智——你的地质资源\n与地质工程学科 AI 学习助手。\n想从哪里开始？'
 let greetingDelay: number | undefined
 let greetingTimer: number | undefined
 
@@ -107,7 +110,10 @@ onBeforeUnmount(clearGreetingTimers)
 .floating-ai-dialog { position: absolute; right: 0; bottom: 0; display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: 1.25vw; width: 100%; height: 75vh; max-height: 75vh; padding: 4.42708vw 1.66667vw 8.85417vw; opacity: 0; pointer-events: none; background: linear-gradient(180deg, rgba(206, 210, 255, .7), rgba(255, 255, 255, .7) 20%); border: .10417vw solid #fff; border-radius: 1.25vw; box-shadow: 0 0 1.04167vw rgba(0, 0, 0, .1); transform: scale3d(0, 0, 0); transform-origin: 100% 100%; transition: transform 300ms cubic-bezier(.2, .8, .2, 1), opacity 220ms ease; backdrop-filter: blur(1.04167vw); }
 .floating-ai-dialog.is-open { opacity: 1; pointer-events: auto; transform: scale(1); }
 .floating-ai-close { position: absolute; top: -1.25vw; right: 0; display: grid; place-items: center; width: 2.5vw; height: 2.5vw; color: #30415c; background: #fff; border: 0; border-radius: 50%; box-shadow: 1px 1px .52083vw rgba(0, 0, 0, .1); transition: transform 180ms ease; }.floating-ai-close:hover { transform: rotate(90deg); }
-.floating-ai-guidance { position: absolute; top: -2.08333vw; left: -1.04167vw; display: flex; align-items: center; gap: .625vw; }.floating-ai-guidance p { width: 14.4271vw; min-height: 3.95833vw; margin: 0; padding: .83333vw; color: #1e1e28; background: #fff; border: .10417vw solid #fff; border-radius: .83333vw; box-shadow: 1px 1px .52083vw rgba(0, 0, 0, .1); font-size: .9375vw; font-weight: 700; line-height: 1.6; white-space: pre-line; }.floating-ai-avatar, .floating-ai-helper-avatar { display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #5c70ff, #0666ff); border-radius: 50%; box-shadow: 0 6px 14px rgba(42, 62, 173, .25); }.floating-ai-avatar { width: clamp(52px, 4.2vw, 56px); height: clamp(52px, 4.2vw, 56px); }
+/* 14.4271vw 的内容容量 ≈ 13.6em，放不下欢迎语第一行的 ~14em，于是「助手」被甩成孤行。
+   15.2vw 给出 ~14.44em 容量，配合文本里的显式换行，两行各自 ~14em 都放得下且有余量；
+   气泡仍在 25vw 面板内（-1.04 + 0.625 间距 + 4.2 头像 + 15.2 ≈ 19vw）。 */
+.floating-ai-guidance { position: absolute; top: -2.08333vw; left: -1.04167vw; display: flex; align-items: center; gap: .625vw; }.floating-ai-guidance p { width: 15.2vw; min-height: 3.95833vw; margin: 0; padding: .83333vw; color: #1e1e28; background: #fff; border: .10417vw solid #fff; border-radius: .83333vw; box-shadow: 1px 1px .52083vw rgba(0, 0, 0, .1); font-size: .9375vw; font-weight: 700; line-height: 1.6; white-space: pre-line; }.floating-ai-avatar, .floating-ai-helper-avatar { display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #5c70ff, #0666ff); border-radius: 50%; box-shadow: 0 6px 14px rgba(42, 62, 173, .25); }.floating-ai-avatar { width: clamp(52px, 4.2vw, 56px); height: clamp(52px, 4.2vw, 56px); }
 /* `flex: 1` instead of a fixed `6.82292vw`: the three buttons were sized against the viewport while the
    panel is only 25vw wide, so their combined max-content (357.7px) exceeded the panel's 310px content box.
    Letting them fill the row also fixes the phone block, which overrides every property EXCEPT `width` —

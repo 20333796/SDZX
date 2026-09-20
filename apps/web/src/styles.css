@@ -789,7 +789,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
      screen had only 41px of slack. These values push that edge out to 1516px, which is what lets
      every group keep all three labels on a normal desktop instead of falling back to two. */
   .nav-inline-links { display: flex; align-items: start; justify-content: center; gap: clamp(7px, .62vw, 12px); padding: 8px 10px 0; }
-  .nav-inline-links button { padding: 0; color: rgba(222, 241, 255, 0.22); background: transparent; border: 0; font-size: clamp(11px, .72vw, 14px); font-weight: 700; line-height: 1.55; white-space: nowrap; transition: color 180ms ease, transform 180ms ease; }
+  .nav-inline-links button { padding: 0; color: rgba(226, 241, 255, .8); background: transparent; border: 0; font-size: clamp(11px, .72vw, 14px); font-weight: 700; line-height: 1.55; white-space: nowrap; transition: color 180ms ease, transform 180ms ease; }
   .nav-inline-links button:hover, .nav-inline-links button:focus-visible { color: #fff; outline: 0; transform: translateY(-1px); }
   .site-header.is-condensed .nav-group-primary { padding-top: 0; }
 }
