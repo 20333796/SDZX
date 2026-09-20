@@ -9,7 +9,7 @@ import {
 } from '@lucide/vue'
 import { fallbackPortalConfig } from '@/config/portal'
 import { destinationForTarget } from '@/config/destinations'
-import { buildGeoChatAgentUrl } from '@/config/geochat'
+import { buildGeoChatWorkbenchUrl } from '@/config/geochat'
 import type { PortalConfig, PortalNavigationLink } from '@/types'
 import { router } from '@/router'
 import { session } from '@/session'
@@ -51,7 +51,9 @@ function goToSlide(target: string) {
 }
 
 function openGeoChat() {
-  window.location.assign(buildGeoChatAgentUrl())
+  // “AI应用中心”要去的是真实 GeoChat 智能体工作台（/geochat/agent），
+  // 不是门户内置的轻量问答页（/platform/geochat/agent）。
+  window.location.assign(buildGeoChatWorkbenchUrl())
 }
 
 function navigate(link: PortalNavigationLink) {

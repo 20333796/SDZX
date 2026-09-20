@@ -13,6 +13,14 @@ export function buildGeoChatAgentUrl(question = '', mode = 'conversation') {
   return url.toString()
 }
 
+export function buildGeoChatWorkbenchUrl() {
+  // 真实 GeoChat 智能体工作台：yuxi 应用以 /geochat/ 为 base path，工作台路由是 /agent，
+  // 即 /geochat/agent（dev/preview 由 vite 代理转发，生产由 nginx 把 /geochat 指向 geochat 容器）。
+  // 首页“AI应用中心”入口跳这里；buildGeoChatAgentUrl 的 /platform/geochat/agent 是门户内置
+  // 的轻量问答页，两者是不同的页面，不要混用。
+  return `${getGeoChatUrl()}/agent`
+}
+
 export function buildGeoChatLoginUrl(returnPath = '/platform/') {
   const portalReturn = new URL(returnPath, window.location.origin)
   const url = new URL('login', `${getGeoChatUrl()}/`)

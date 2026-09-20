@@ -35,6 +35,25 @@ export default defineConfig(({ mode }) => {
   // 站点根 `/` 落地页（public/landing，即桌面“郭网页”静态首页）与平台（/platform/）的跳转
   // 在前端路由里用 location.replace 处理：根路径整页换到落地页，避免与 Vite 的 base 重定向排序打架。
   // 这里保持默认 base（'/'），public 资源（/cupb-logo.png、/images/...）路径不受影响。
+  // dev 与 preview 共用同一套代理：首页“AI应用中心”整页跳 /geochat/agent（真实 GeoChat
+  // 智能体工作台），preview 若不代理 /geochat，请求会落进 SPA fallback 被送回平台首页。
+  const sharedProxy = {
+    /* The geochat app runs with VITE_BASE_PATH=/geochat/ (same as its compose build), so the
+       prefix must be PRESERVED end-to-end: page, assets and /geochat/api all resolve inside
+       yuxi itself. Stripping the prefix here (the old rewrite) left the browser URL at
+       /geochat/login while the app routed on / — the router's catch-all swallowed the path
+       and the sign-in URL rendered the geochat home instead of the form. */
+    '/geochat': {
+      target: geoChatProxyTarget,
+      changeOrigin: true,
+      ws: true
+    },
+    /* Legacy passthrough: an organization.login_bg set to a root-absolute /login-bg.jpg in
+       the DB escapes the /geochat prefix. Only needed while that setting is actually used. */
+    '/login-bg.jpg': { target: geoChatProxyTarget, changeOrigin: true },
+    '/api': apiProxyTarget
+  }
+
   return {
     plugins: [
       vue(),
@@ -68,22 +87,10 @@ export default defineConfig(({ mode }) => {
       watch: {
         ignored: ['**/dist/**', '**/dist-*/**', '**/node_modules/**', '**/.git/**']
       },
-      proxy: {
-        /* The geochat app runs with VITE_BASE_PATH=/geochat/ (same as its compose build), so the
-           prefix must be PRESERVED end-to-end: page, assets and /geochat/api all resolve inside
-           yuxi itself. Stripping the prefix here (the old rewrite) left the browser URL at
-           /geochat/login while the app routed on / — the router's catch-all swallowed the path
-           and the sign-in URL rendered the geochat home instead of the form. */
-        '/geochat': {
-          target: geoChatProxyTarget,
-          changeOrigin: true,
-          ws: true
-        },
-        /* Legacy passthrough: an organization.login_bg set to a root-absolute /login-bg.jpg in
-           the DB escapes the /geochat prefix. Only needed while that setting is actually used. */
-        '/login-bg.jpg': { target: geoChatProxyTarget, changeOrigin: true },
-        '/api': apiProxyTarget
-      }
+      proxy: sharedProxy
+    },
+    preview: {
+      proxy: sharedProxy
     }
   }
 })
