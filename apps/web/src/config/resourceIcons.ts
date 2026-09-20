@@ -3,12 +3,18 @@ import {
   BookOpen,
   Boxes,
   Compass,
+  Cpu,
   Droplets,
   FlaskConical,
+  Gem,
+  Globe,
   GraduationCap,
+  Hammer,
   Layers,
+  Map,
   Microscope,
   Mountain,
+  Radar,
   Radio,
   Waves
 } from '@lucide/vue'
@@ -23,7 +29,20 @@ const byId: Record<string, Component> = {
   'clastic-rock-vr': Microscope,
   'sedimentary-rock-vr': Layers,
   'seismic-exploration-vr': Waves,
-  'radioactive-logging-vr': Radio
+  'radioactive-logging-vr': Radio,
+  'general-geology': Mountain,
+  'earth-science-intro': Globe,
+  'rock-forming-minerals': Gem,
+  'sedimentary-petrology': Layers,
+  'geophysical-logging': Radio,
+  'elastic-wave-dynamics': Waves,
+  'seismic-wave-dynamics': Waves,
+  'seismic-exploration-principles': Radar,
+  'reservoir-geology': Droplets,
+  'seismic-data-processing': Cpu,
+  'seismic-exploration-practice': Hammer,
+  'comprehensive-geology-internship': Map,
+  'oil-gas-field-exploration': Compass
 }
 
 const fallback: Record<string, Component> = {
