@@ -56,6 +56,64 @@ export const fallbackResources: ExternalResource[] = [
     description: '油气田勘探研究生课程资源。',
     sort_order: 38
   },
+  // 以下 4 门取自超星「地球物理学」智慧课程群（5o2hyk4q.mh.chaoxing.com 课程体系页 CMS 数据，2026-09 提取），
+  // 为各课官方课程门户；未登录学习通时门户页 403/空白，登录后直达课程。
+  {
+    id: 'geophysical-logging',
+    title: '地球物理测井',
+    provider: '超星智慧课程',
+    category: 'courses',
+    course_level: '本科',
+    audience: '地质与石油工程专业学生',
+    credits: 4,
+    language: '中文',
+    status: 'active',
+    url: 'https://mooc1.chaoxing.com/course-ans/courseportal/258498126.html',
+    description: '测井原理、方法与解释应用。主讲：谢然红。',
+    sort_order: 39
+  },
+  {
+    id: 'elastic-wave-dynamics',
+    title: '弹性波动力学',
+    provider: '超星智慧课程',
+    category: 'courses',
+    course_level: '本科',
+    audience: '地质与石油工程专业学生',
+    credits: 4,
+    language: '中文',
+    status: 'active',
+    url: 'https://mooc1.chaoxing.com/course/portal/9-gIKgDc1v24GwxA7Pk14w==',
+    description: '弹性波传播理论与动力学基础。主讲：唐跟阳。',
+    sort_order: 40
+  },
+  {
+    id: 'seismic-wave-dynamics',
+    title: '地震波动力学',
+    provider: '超星智慧课程',
+    category: 'courses',
+    course_level: '本科',
+    audience: '地质与石油工程专业学生',
+    credits: 3,
+    language: '中文',
+    status: 'active',
+    url: 'https://mooc1.chaoxing.com/course-ans/courseportal/258225027.html',
+    description: '地震波传播动力学理论。主讲：陈汉明。',
+    sort_order: 41
+  },
+  {
+    id: 'seismic-exploration-principles',
+    title: '地震勘探原理',
+    provider: '超星智慧课程',
+    category: 'courses',
+    course_level: '本科',
+    audience: '地质与石油工程专业学生',
+    credits: 4,
+    language: '中文',
+    status: 'active',
+    url: 'https://mooc1.chaoxing.com/course-ans/courseportal/89784903.html',
+    description: '地震勘探基本原理与流程。主讲：刘洋。',
+    sort_order: 42
+  },
   {
     id: 'clastic-rock-vr',
     title: '碎屑岩镜下观察虚拟仿真',

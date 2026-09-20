@@ -9,6 +9,7 @@ import {
   Layers,
   Microscope,
   Mountain,
+  Radar,
   Radio,
   Waves
 } from '@lucide/vue'
@@ -23,7 +24,11 @@ const byId: Record<string, Component> = {
   'clastic-rock-vr': Microscope,
   'sedimentary-rock-vr': Layers,
   'seismic-exploration-vr': Waves,
-  'radioactive-logging-vr': Radio
+  'radioactive-logging-vr': Radio,
+  'geophysical-logging': Radio,
+  'elastic-wave-dynamics': Waves,
+  'seismic-wave-dynamics': Waves,
+  'seismic-exploration-principles': Radar
 }
 
 const fallback: Record<string, Component> = {
