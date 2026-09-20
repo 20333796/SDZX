@@ -33,7 +33,7 @@ _SAFE_OUTPUT_STEM_RE = re.compile(r"[^A-Za-z0-9._\-\u4e00-\u9fff]+")
 _DOUBAO_SEARCH_URL = "https://open.feedcoopapi.com/search_api/web_search"
 _BING_SEARCH_URL = "https://cn.bing.com/search"
 
-DOUBAO_SEARCH_DESCRIPTION = """执行网络网页搜索，通过豆包联网搜索获取实时高质量互联网网页内容、新闻和站点资料。
+DOUBAO_SEARCH_DESCRIPTION = """执行网络网页搜索，获取实时互联网网页内容、新闻和站点资料，并返回来源标题、摘要和 URL。
 
 适用场景：
 1. 获取最新的时事新闻、即时信息或最新科技动态
