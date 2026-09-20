@@ -2372,9 +2372,11 @@ const conversationRows = computed(() => {
   return rows
 })
 
-// ==================== 检索记录提取（右侧检索面板：网络搜索 + 网页访问） ====================
+// ==================== 检索记录提取（右侧检索面板：网络搜索 + 网页访问 + 知识库检索） ====================
 const WEB_SEARCH_TOOL_KEYWORDS = ['web_search', 'tavily_search', 'doubao_search']
 const WEB_FETCH_TOOL_KEYWORDS = ['execute']
+// 知识库检索类：query_kb 检索内容片段、search_file 按名搜文件、find_kb_document 文档内定位
+const KB_RETRIEVAL_TOOL_NAMES = new Set(['query_kb', 'search_file', 'find_kb_document'])
 const MAX_RETRIEVAL_RECORDS = 50
 const MAX_RECORD_HITS = 3
 
@@ -2439,76 +2441,220 @@ const formatRecordTime = (createdAt) => {
   return time.isSame(now, 'day') ? time.format('HH:mm') : time.format('MM-DD HH:mm')
 }
 
-// 遍历当前线程全部对话消息，生成「最近检索」记录（最新在前）。
-// 收录两类：网络搜索（web_search / tavily_search / doubao_search 及变体）、
-// 网页访问（execute 等命令工具里携带 http(s) 网址的调用，如 curl 抓取网页）。
-// 知识库检索、本地文件读写等不在此面板罗列。
+// 从一批消息里提取「最近检索」记录并追加到 records（按 seenKeys 去重）。
+// 收录三类：网络搜索（web_search / tavily_search / doubao_search 及变体）、
+// 网页访问（execute 等命令工具里携带 http(s) 网址的调用，如 curl 抓取网页）、
+// 知识库检索（query_kb / search_file / find_kb_document，子智能体最常见的检索形态）。
+// 本地文件读写等纯操作不在此面板罗列。
+const pushRetrievalRecordsFromMessages = (messages, records, seenKeys) => {
+  if (!Array.isArray(messages)) return
+  messages.forEach((msg) => {
+    if (!msg || msg.type !== 'ai' || !Array.isArray(msg.tool_calls)) return
+    msg.tool_calls.forEach((toolCall, callIndex) => {
+      const toolName = String(toolCall?.name || toolCall?.function?.name || '').toLowerCase()
+      if (!toolName) return
+
+      let kindLabel = ''
+      let title = ''
+      let hits = []
+
+      if (isWebSearchToolName(toolName)) {
+        const args = parseToolCallArgs(toolCall)
+        const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
+        const rawResults = Array.isArray(parsedResult?.results) ? parsedResult.results : []
+
+        hits = []
+        for (const item of rawResults) {
+          const hitTitle = typeof item?.title === 'string' ? item.title.trim() : ''
+          const url = typeof item?.url === 'string' ? item.url.trim() : ''
+          if (!hitTitle || !url) continue
+          // 概述：结果条目的 content/snippet 等字段（不同引擎字段名不一，pickSearchSummary 兜底）
+          hits.push({ key: url, type: 'url', label: hitTitle, url, summary: pickSearchSummary(item) })
+        }
+        if (!hits.length) return
+        kindLabel = '网络搜索'
+        title = String(args?.query || parsedResult?.query || toolName).trim()
+      } else if (isWebFetchToolName(toolName)) {
+        hits = extractWebFetchHits(toolCall)
+        if (!hits.length) return
+        kindLabel = '网页访问'
+        // 从执行结果（curl 抓取的 HTML/文本）提取网页标题与内容概述；
+        // 同一命令抓取多个网址时结果混在一起，标题/概述取整体首个解析值，仅作概览展示。
+        const resultText = toolResultContentText(toolCall?.tool_call_result?.content)
+        const pageTitle = extractPageTitle(resultText)
+        const pageSummary = extractPageSummary(resultText)
+        if (pageTitle) {
+          hits = hits.map((hit) => ({ ...hit, label: pageTitle, summary: pageSummary }))
+          title = pageTitle
+        } else {
+          title = hits[0].label
+          if (pageSummary) hits = hits.map((hit) => ({ ...hit, summary: pageSummary }))
+        }
+      } else if (KB_RETRIEVAL_TOOL_NAMES.has(toolName)) {
+        // 知识库检索（子智能体最常用的检索形态）：query_kb / search_file / find_kb_document
+        const args = parseToolCallArgs(toolCall)
+        const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
+        kindLabel = '知识库检索'
+        hits = []
+        if (toolName === 'query_kb') {
+          title = String(args?.query_text || args?.query || toolName).trim()
+          const items = Array.isArray(parsedResult?.chunks)
+            ? parsedResult.chunks
+            : Array.isArray(parsedResult?.results)
+              ? parsedResult.results
+              : []
+          for (const item of items) {
+            const meta = item?.metadata || {}
+            const label =
+              String(meta.file_name || meta.filename || item?.file_name || item?.filename || item?.doc_title || '知识库片段').trim() ||
+              '知识库片段'
+            const summary = pickSearchSummary(item)
+            hits.push({ key: `${item?.file_id || item?.chunk_id || label}-${hits.length}`, type: 'kb', label, summary })
+          }
+        } else if (toolName === 'search_file') {
+          title = String(args?.query || args?.keyword || toolName).trim()
+          const files = Array.isArray(parsedResult?.files) ? parsedResult.files : []
+          for (const file of files) {
+            const label = String(file?.filename || file?.file_name || '未命名文件').trim()
+            if (!label) continue
+            hits.push({ key: `${file?.file_id || label}-${hits.length}`, type: 'kb', label, summary: '' })
+          }
+        } else {
+          // find_kb_document：在已知文档内按关键词/正则定位
+          const patterns = Array.isArray(args?.patterns)
+            ? args.patterns.filter((p) => typeof p === 'string' && p.trim())
+            : []
+          title = patterns.length ? patterns.join(' / ') : String(args?.file_id || toolName).trim()
+          const windows = Array.isArray(parsedResult?.windows) ? parsedResult.windows : []
+          for (const win of windows) {
+            const label =
+              String(win?.title || win?.heading || win?.label || (typeof win?.line === 'number' ? `第 ${win.line} 行附近` : '') || '定位片段').trim() ||
+              '定位片段'
+            const summary =
+              typeof win?.content === 'string'
+                ? win.content.slice(0, 120)
+                : typeof win?.text === 'string'
+                  ? win.text.slice(0, 120)
+                  : ''
+            hits.push({ key: `win-${hits.length}`, type: 'kb', label, summary })
+          }
+        }
+        // 无结果也保留记录（title 兜底 toolName 前已判空）：检索发生过就该显示
+        if (!title) return
+        hits = hits.filter((hit) => hit.label)
+      } else {
+        return
+      }
+
+      const key = String(toolCall?.id || `${toolName}-${msg.id || ''}-${callIndex}`)
+      if (seenKeys.has(key)) return
+      seenKeys.add(key)
+
+      records.push({
+        key,
+        kindLabel,
+        title,
+        timeText: formatRecordTime(msg.created_at),
+        hits: hits.slice(0, MAX_RECORD_HITS),
+        extraCount: Math.max(0, hits.length - MAX_RECORD_HITS)
+      })
+    })
+  })
+}
+
+// —— 子智能体子线程的检索记录 ——
+// 子智能体流程下真正的联网检索发生在 web-search 等子线程里（主线程只有
+// subagent_start / subagent_status），「最近检索」必须并入当前线程派生的
+// 全部子线程记录：历史走 getAgentHistory(childThreadId)，流式与深层
+// TaskTool 实时轨迹同源（chatState.threadStates[childThreadId].onGoingConv）。
+// 启动调用的 child_thread_id 来源：agent_state.subagent_runs、历史消息
+// tool_calls（subagent_run 附件 / args.thread_id）、进行中消息、前端推算缓存。
+const collectLaunchThreadIds = (messages, ids) => {
+  if (!Array.isArray(messages)) return
+  messages.forEach((msg) => {
+    if (msg?.type !== 'ai' || !Array.isArray(msg.tool_calls)) return
+    msg.tool_calls.forEach((toolCall) => {
+      const name = String(toolCall?.name || toolCall?.function?.name || '').toLowerCase()
+      if (!isSubagentLaunchToolName(name)) return
+      if (toolCall?.subagent_run?.child_thread_id) {
+        ids.add(String(toolCall.subagent_run.child_thread_id))
+      }
+      const args = parseToolCallArgs(toolCall)
+      if (args?.thread_id) ids.add(String(args.thread_id))
+      const callId = toolCall?.id ? String(toolCall.id) : ''
+      const mapped = callId ? chatState.subagentThreadByToolCall[callId] : ''
+      if (mapped) ids.add(String(mapped))
+    })
+  })
+}
+
+const childThreadIds = computed(() => {
+  const ids = new Set()
+  currentSubagentRuns.value.forEach((run) => {
+    if (run?.child_thread_id) ids.add(String(run.child_thread_id))
+  })
+  conversations.value.forEach((conv) => collectLaunchThreadIds(conv?.messages, ids))
+  // 进行中 run 的启动调用在 ongoing 消息里（尚未落库到 history）
+  collectLaunchThreadIds(onGoingConvMessages.value, ids)
+  return [...ids]
+})
+
+const childThreadMessages = ref({}) // childThreadId -> 历史消息数组
+const childThreadFetching = new Set()
+const childThreadFetched = new Set()
+const childThreadRefreshVersion = ref(0)
+
+const fetchChildThreadHistory = async (threadId) => {
+  if (childThreadFetching.has(threadId)) return
+  childThreadFetching.add(threadId)
+  try {
+    const response = await agentApi.getAgentHistory(threadId)
+    const history = Array.isArray(response?.history) ? response.history : []
+    childThreadMessages.value = { ...childThreadMessages.value, [threadId]: history }
+    childThreadFetched.add(threadId)
+  } catch {
+    // 子线程历史拉取失败：留空，收尾刷新时会重试
+  } finally {
+    childThreadFetching.delete(threadId)
+  }
+}
+
+// childThreadIds 是新数组标识，流式期间会频繁重算 —— 只对「没取过」的 id 发请求，
+// 避免每条流式增量都触发一轮子线程历史拉取。
+watch(
+  childThreadIds,
+  (ids) => {
+    ids.forEach((threadId) => {
+      if (!childThreadFetched.has(threadId)) fetchChildThreadHistory(threadId)
+    })
+  },
+  { immediate: true }
+)
+
+// 主线程运行收尾后强制刷新全部子线程：流式期间工具结果不落库（不入 history），
+// 结束后重新拉取才能补齐子线程里的检索工具结果。
+watch(childThreadRefreshVersion, () => {
+  childThreadFetched.clear()
+  childThreadIds.value.forEach((threadId) => fetchChildThreadHistory(threadId))
+})
+
+// 已存在的子线程流式消息（不主动创建线程状态，避免在 computed 里产生副作用）
+const peekChildThreadOngoingMessages = (threadId) => {
+  if (!chatState.threadStates[threadId]?.onGoingConv) return []
+  return getThreadOngoingMessages(threadId)
+}
+
+// 遍历当前线程全部对话 + 派生子线程消息，生成「最近检索」记录（最新在前）。
 const retrievalRecords = computed(() => {
   const records = []
   const seenKeys = new Set()
 
-  conversations.value.forEach((conv) => {
-    if (!conv || !Array.isArray(conv.messages)) return
-    conv.messages.forEach((msg) => {
-      if (!msg || msg.type !== 'ai' || !Array.isArray(msg.tool_calls)) return
-      msg.tool_calls.forEach((toolCall, callIndex) => {
-        const toolName = String(toolCall?.name || toolCall?.function?.name || '').toLowerCase()
-        if (!toolName) return
-
-        let kindLabel = ''
-        let title = ''
-        let hits = []
-
-        if (isWebSearchToolName(toolName)) {
-          const args = parseToolCallArgs(toolCall)
-          const parsedResult = parseToolResultJson(toolCall?.tool_call_result?.content)
-          const rawResults = Array.isArray(parsedResult?.results) ? parsedResult.results : []
-
-          hits = []
-          for (const item of rawResults) {
-            const hitTitle = typeof item?.title === 'string' ? item.title.trim() : ''
-            const url = typeof item?.url === 'string' ? item.url.trim() : ''
-            if (!hitTitle || !url) continue
-            // 概述：结果条目的 content/snippet 等字段（不同引擎字段名不一，pickSearchSummary 兜底）
-            hits.push({ key: url, type: 'url', label: hitTitle, url, summary: pickSearchSummary(item) })
-          }
-          if (!hits.length) return
-          kindLabel = '网络搜索'
-          title = String(args?.query || parsedResult?.query || toolName).trim()
-        } else if (isWebFetchToolName(toolName)) {
-          hits = extractWebFetchHits(toolCall)
-          if (!hits.length) return
-          kindLabel = '网页访问'
-          // 从执行结果（curl 抓取的 HTML/文本）提取网页标题与内容概述；
-          // 同一命令抓取多个网址时结果混在一起，标题/概述取整体首个解析值，仅作概览展示。
-          const resultText = toolResultContentText(toolCall?.tool_call_result?.content)
-          const pageTitle = extractPageTitle(resultText)
-          const pageSummary = extractPageSummary(resultText)
-          if (pageTitle) {
-            hits = hits.map((hit) => ({ ...hit, label: pageTitle, summary: pageSummary }))
-            title = pageTitle
-          } else {
-            title = hits[0].label
-            if (pageSummary) hits = hits.map((hit) => ({ ...hit, summary: pageSummary }))
-          }
-        } else {
-          return
-        }
-
-        const key = String(toolCall?.id || `${toolName}-${msg.id || ''}-${callIndex}`)
-        if (seenKeys.has(key)) return
-        seenKeys.add(key)
-
-        records.push({
-          key,
-          kindLabel,
-          title,
-          timeText: formatRecordTime(msg.created_at),
-          hits: hits.slice(0, MAX_RECORD_HITS),
-          extraCount: Math.max(0, hits.length - MAX_RECORD_HITS)
-        })
-      })
-    })
+  conversations.value.forEach((conv) =>
+    pushRetrievalRecordsFromMessages(conv?.messages, records, seenKeys)
+  )
+  childThreadIds.value.forEach((threadId) => {
+    pushRetrievalRecordsFromMessages(childThreadMessages.value[threadId], records, seenKeys)
+    pushRetrievalRecordsFromMessages(peekChildThreadOngoingMessages(threadId), records, seenKeys)
   })
 
   return records.reverse().slice(0, MAX_RETRIEVAL_RECORDS)
@@ -2606,6 +2752,16 @@ const isProcessing = computed(
 const isReplyLoading = computed(() => {
   const threadState = currentThreadState.value
   return Boolean(threadState?.replyLoadingVisible) && currentQueueSnapshot.value.status !== 'paused'
+})
+
+// 主线程运行收尾（true→false）后刷新子线程历史：流式期间工具结果不落库，
+// bump 版本号触发上方子线程记录块的强制重取；同时刷新 agent state，
+// 补齐本轮 run 的 subagent_runs（completed 子智能体的 child_thread_id 在这里）。
+watch(isProcessing, (busy, prevBusy) => {
+  if (prevBusy && !busy) {
+    childThreadRefreshVersion.value += 1
+    void handleAgentStateRefresh()
+  }
 })
 const replyLoadingText = computed(() => {
   const threadState = currentThreadState.value
@@ -3829,6 +3985,19 @@ const toggleStatePanel = async () => {
     await handleAgentStateRefresh()
   }
 }
+
+// 检索面板展开 / 线程切换时确保 agent state（含 subagent_runs）就绪，并强制
+// 刷新子线程历史 —— completed 子智能体的 child_thread_id 只有这里有记录；
+// 线程加载路径的 handleAgentStateRefresh 在 agent 未就绪时会被静默跳过，这里兜底。
+watch(
+  [isRetrievalPanelOpen, currentChatId],
+  ([open]) => {
+    if (!open || !currentChatId.value) return
+    if (!currentAgentState.value) void handleAgentStateRefresh(currentChatId.value)
+    childThreadRefreshVersion.value += 1
+  },
+  { immediate: true }
+)
 
 const closeFilePanel = () => {
   isFilePanelOpen.value = false

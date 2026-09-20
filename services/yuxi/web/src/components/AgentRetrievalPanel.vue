@@ -145,8 +145,13 @@ const openHit = (hit) => {
   if (!hit?.url) return
   // 已探明禁止嵌入的站点：直接新窗口打开，不再进侧边栏（同步手势，弹窗不会被拦）
   if (getCachedEmbedCheck(hit.url) === true) {
-    window.open(hit.url, '_blank', 'noopener,noreferrer')
-    return
+    const win = window.open(hit.url, '_blank', 'noopener,noreferrer')
+    if (win) {
+      // 二选一：新窗口已打开，整个面板收起，不再留侧边栏
+      emit('close')
+      return
+    }
+    // 弹窗被拦：回退进内嵌视图，由 8s 兜底提示条接管
   }
   browsingUrl.value = hit.url
   browsingTitle.value = hit.label || ''
@@ -185,8 +190,9 @@ const getCachedEmbedCheck = (url) => {
   return cached.denied
 }
 
-// 静默探测：denied 且用户仍在内嵌浏览同一 URL → 新窗口打开，成功即回列表；
-// 弹窗被拦（win 为 null）时留在内嵌视图，由 8s 兜底提示条接管。
+// 静默探测：denied 且用户仍在内嵌浏览同一 URL → 新窗口打开，成功即关闭整个
+// 面板（二选一：新窗口与侧边栏不同时出现）；弹窗被拦（win 为 null）时留在
+// 内嵌视图，由 8s 兜底提示条接管。
 const checkEmbeddable = async (url) => {
   let denied = false
   try {
@@ -201,7 +207,10 @@ const checkEmbeddable = async (url) => {
   embedCheckCache.set(url, { denied, ts: Date.now() })
   if (denied && browsingUrl.value === url) {
     const win = window.open(url, '_blank', 'noopener,noreferrer')
-    if (win) closeBrowse()
+    if (win) {
+      closeBrowse()
+      emit('close')
+    }
   }
 }
 
