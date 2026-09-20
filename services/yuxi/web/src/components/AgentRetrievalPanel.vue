@@ -104,6 +104,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { ExternalLink, Globe, X } from '@lucide/vue'
+import { apiGet } from '@/apis/base'
 
 const props = defineProps({
   /** 当前对话的检索记录列表（由 AgentChatComponent 从本线程消息中提取，不含跨对话缓存） */
@@ -140,29 +141,58 @@ watch(
   }
 )
 
-const openHit = (hit) => {
-  if (!hit?.url) return
-  if (shouldPreferExternal(hit.url)) {
-    window.open(hit.url, '_blank', 'noopener,noreferrer')
-    return
+// —— 内嵌预检（后端探针判定 XFO/CSP，SSRF 护栏在服务端）——
+// session 级缓存 + 5 分钟 TTL，命中可跳过重复探测；
+// 预检不可嵌时在内嵌视图直接显示提示条（用户手动点「在新窗口打开」，避免 async 弹窗被拦截）。
+const EMBED_CHECK_TTL = 5 * 60 * 1000
+const embedCheckCache = new Map()
+let embedCheckSeq = 0
+
+const checkEmbeddable = async (url) => {
+  const seq = ++embedCheckSeq
+  let result = null
+  try {
+    result = await apiGet(`/api/tools/url-embed-check?url=${encodeURIComponent(url)}`)
+  } catch {
+    return // 探测端点不可用：保持「尝试内嵌 + 8s 超时兜底」的原有路径
   }
-  browsingUrl.value = hit.url
-  browsingTitle.value = hit.label || ''
-  iframeLoading.value = true
-  frameBlocked.value = false
-  iframeKey.value += 1
-  armBlockedFallback()
+  if (seq !== embedCheckSeq) return // 用户已切换到其他页面
+  if (!result || typeof result.embeddable !== 'boolean') return
+  embedCheckCache.set(url, { embeddable: result.embeddable, ts: Date.now() })
+  if (!result.embeddable && browsingUrl.value === url) {
+    iframeLoading.value = false
+    frameBlocked.value = true
+    if (blockedCheckTimer) {
+      clearTimeout(blockedCheckTimer)
+      blockedCheckTimer = null
+    }
+  }
 }
 
-// 明确返回 X-Frame-Options: SAMEORIGIN 的学校官网不能被工作台跨站嵌入。
-// 这类链接直接新窗口打开，其余站点仍先尝试内嵌。
-const shouldPreferExternal = (url) => {
-  try {
-    const parsed = new URL(url)
-    return parsed.hostname === 'www.cup.edu.cn'
-  } catch {
-    return false
+const openHit = (hit) => {
+  if (!hit?.url) return
+  browsingUrl.value = hit.url
+  browsingTitle.value = hit.label || ''
+  iframeKey.value += 1
+
+  const cached = embedCheckCache.get(hit.url)
+  if (cached && Date.now() - cached.ts < EMBED_CHECK_TTL) {
+    if (!cached.embeddable) {
+      // 已知禁止内嵌：跳过 iframe 加载，直接显示提示条
+      iframeLoading.value = false
+      frameBlocked.value = true
+      return
+    }
+    iframeLoading.value = true
+    frameBlocked.value = false
+    armBlockedFallback()
+    return
   }
+
+  iframeLoading.value = true
+  frameBlocked.value = false
+  armBlockedFallback()
+  void checkEmbeddable(hit.url)
 }
 
 const closeBrowse = () => {
@@ -210,6 +240,10 @@ const checkFrameBlank = () => {
 const handleFrameLoad = () => {
   iframeLoading.value = false
   if (blockedCheckTimer) clearTimeout(blockedCheckTimer)
+  // 后端预检已判定不可嵌时不得清除提示条：XFO 拒绝场景的 iframe 也会触发 load
+  // （Chromium 安全模型刻意让 contentDocument 为 null 且 load 正常触发），会与本判定竞态。
+  const denied = embedCheckCache.get(browsingUrl.value)
+  if (denied && !denied.embeddable) return
   frameBlocked.value = false
   blockedCheckTimer = setTimeout(() => {
     blockedCheckTimer = null
