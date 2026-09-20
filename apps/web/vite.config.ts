@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import { readFileSync } from 'node:fs'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -16,8 +17,39 @@ export default defineConfig(({ mode }) => {
   // stack is up, and pointing a vite dev server at itself (the old default) self-loops /geochat.
   const geoChatProxyTarget = env.VITE_GEOCHAT_PROXY_TARGET ?? 'http://127.0.0.1:5177'
 
+  // 站点根 `/` 与 `/landing/` 都应呈现桌面“郭网页”静态首页（public/landing/index.html）。
+  // 但 Vite 的 SPA history fallback 会把目录请求 `/landing/` 改写成根 index.html（即平台本身），
+  // 导致落地页永远上不来。这里在中间件栈最前插入一个只认 `/landing` 与 `/landing/` 的处理器，
+  // 直接吐出静态落地页；其余路径放行给 Vite 默认逻辑。不碰 base，public 资源（/cupb-logo.png 等）路径不受影响。
+  const landingHtml = readFileSync(new URL('./public/landing/index.html', import.meta.url), 'utf-8')
+  const serveLanding = (req, res, next) => {
+    if (req.url === '/landing' || req.url === '/landing/') {
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      res.end(landingHtml)
+      return
+    }
+    next()
+  }
+
+  // 站点根 `/` 落地页（public/landing，即桌面“郭网页”静态首页）与平台（/platform/）的跳转
+  // 在前端路由里用 location.replace 处理：根路径整页换到落地页，避免与 Vite 的 base 重定向排序打架。
+  // 这里保持默认 base（'/'），public 资源（/cupb-logo.png、/images/...）路径不受影响。
   return {
-    plugins: [vue()],
+    plugins: [
+      vue(),
+      {
+        // 把 `/landing` 与 `/landing/` 直接吐出静态落地页（public/landing/index.html）。
+        // 必须作为插件钩子注册：configureServer 不是合法的顶层配置项，写成顶层键会被 Vite 直接忽略。
+        name: 'serve-landing',
+        configureServer(server) {
+          server.middlewares.use(serveLanding)
+        },
+        configurePreviewServer(server) {
+          server.middlewares.use(serveLanding)
+        }
+      }
+    ],
     /* 本环境的文件删除有批量安全守卫：Vite 运行中发现新依赖会重建 deps_temp（>50 个文件）并
        尝试 rm，守卫直接抛错杀死 dev server（曾因 ol/Overlay 被动态发现而崩）。把已知条目
        预先列在这里可避免运行中再优化；新增 import 后若 dev server 意外退出，优先想到这里。 */

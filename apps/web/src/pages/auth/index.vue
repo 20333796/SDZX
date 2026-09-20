@@ -9,7 +9,8 @@ const route = useRoute()
 const redirect = computed(() => {
   const raw = route.query.redirect
   const value = Array.isArray(raw) ? raw[0] : raw
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/'
+  // 兜底落平台首页而非站点根 `/`：站点根现在是郭网页落地页，登录后应回到平台里。
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/platform/'
 })
 
 function openGeoChatLogin() {

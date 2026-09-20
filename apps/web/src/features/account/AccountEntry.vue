@@ -24,7 +24,8 @@ function goSignIn() {
   // Remember where the user was so the login page can hand them back. Nothing to remember when we are
   // already standing on it — that would just make the redirect bounce off the guard.
   const redirect = from.name === 'sign-in' || from.fullPath === '/' ? undefined : from.fullPath
-  window.location.assign(buildGeoChatLoginUrl(redirect || '/'))
+  // 兜底落平台首页而非站点根 `/`：站点根现在是郭网页落地页，登录后应回到平台里。
+  window.location.assign(buildGeoChatLoginUrl(redirect || '/platform/'))
 }
 
 function signOut() {
