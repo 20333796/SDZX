@@ -3,12 +3,12 @@
     <!-- 列表视图 -->
     <template v-if="!browsingUrl">
       <div class="retrieval-panel__header">
-        <span class="retrieval-panel__title">外部网页访问</span>
+        <span class="retrieval-panel__title">资源</span>
         <button
           type="button"
           class="retrieval-panel__close"
           title="关闭"
-          aria-label="关闭外部网页访问面板"
+          aria-label="关闭资源面板"
           @click.stop="emit('close')"
         >
           <X :size="14" />
@@ -18,7 +18,7 @@
       <div class="retrieval-panel__body">
         <!-- 仅展示实际访问过的外部网页。 -->
         <section class="retrieval-section">
-          <div v-if="!records.length" class="retrieval-empty">暂无外部网页访问记录</div>
+          <div v-if="!records.length" class="retrieval-empty">暂无资源</div>
           <div v-else class="record-list">
             <article v-for="record in records" :key="record.key" class="record-card">
               <div class="record-card__head">
@@ -32,14 +32,13 @@
                   :key="hit.key"
                   type="button"
                   class="record-hit"
-                  :title="hit.summary || hit.label"
+                  :title="hit.label"
                   @click="openHit(hit)"
                 >
                   <span class="record-hit__title">
                     <Globe :size="12" class="record-hit__icon" />
                     <span class="record-hit__label">{{ hit.label }}</span>
                   </span>
-                  <span v-if="hit.summary" class="record-hit__summary">{{ hit.summary }}</span>
                 </button>
                 <span v-if="record.extraCount > 0" class="record-hit record-hit--more">
                   +{{ record.extraCount }}

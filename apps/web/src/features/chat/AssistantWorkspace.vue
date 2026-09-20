@@ -137,7 +137,12 @@ onMounted(() => {
             <li v-for="citation in message.citations" :key="`${citation.document_id}-${citation.source_locator}`">{{ citation.title }}{{ citation.source_locator ? ` · ${citation.source_locator}` : '' }}</li>
           </ul>
           <ul v-if="message.resources?.length" class="assistant-resources">
-            <li v-for="resource in message.resources" :key="resource.id"><a v-if="resource.route" :href="resource.route">{{ resource.title }}</a><span v-else>{{ resource.title }}</span><small>{{ resource.category === 'practice' ? '虚拟仿真' : resource.category === 'mentor' ? '导师图谱' : '课程' }}</small></li>
+            <li v-for="resource in message.resources" :key="resource.id">
+              <a v-if="resource.url" :href="resource.url" target="_blank" rel="noopener noreferrer">{{ resource.title }}</a>
+              <a v-else-if="resource.route" :href="resource.route">{{ resource.title }}</a>
+              <span v-else>{{ resource.title }}</span>
+              <small>{{ resource.url || '暂无可用访问地址' }}</small>
+            </li>
           </ul>
         </article>
       </template>

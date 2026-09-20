@@ -188,7 +188,10 @@ onMounted(() => {
               <b>{{ resource.title }}</b>
               <small>{{ resource.provider }} · {{ resource.description }}</small>
             </button>
-            <button v-if="resource.url" class="resource-external" type="button" aria-label="新窗口打开" title="新窗口打开" @click="openExternal(resource)"><Globe2 :size="16" /></button>
+            <a v-if="resource.url" class="resource-address" :href="resource.url" target="_blank" rel="noopener noreferrer" @click.stop>
+              <Globe2 :size="15" /><span>访问地址</span><small>{{ resource.url }}</small>
+            </a>
+            <button v-else class="resource-external" type="button" disabled aria-label="暂无访问地址" title="暂无访问地址"><Globe2 :size="16" /></button>
           </article>
         </template>
         <template v-else>
@@ -237,6 +240,9 @@ onMounted(() => {
 .bubble { transition: box-shadow 180ms ease, border-color 180ms ease; }
 .conversation-item.assistant .bubble:hover { border-color: #dfdcff; box-shadow: 0 10px 24px rgba(54, 46, 129, .06); }
 .source-button, .quick-actions button, .composer-actions button, .sources-content a { transition: transform 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease; }
+.resource-address { grid-column: 1 / -1; display: flex; flex: 1; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; padding: 13px 10px; color: #0871ba; background: #f2f6f9; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; }
+.resource-address small { overflow: hidden; color: #6e8297; font-size: 11px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.resource-external:disabled { opacity: .35; cursor: not-allowed; }
 .source-button:hover, .quick-actions button:hover, .composer-actions button:hover { transform: translateY(-2px); box-shadow: 0 7px 15px rgba(53, 45, 121, .1); }
 .workbench-composer { transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
 .workbench-composer:focus-within { border-color: #5645f2; box-shadow: 0 10px 28px rgba(93, 74, 243, .16); transform: translateY(-2px); }

@@ -1,12 +1,8 @@
 <template>
   <div v-if="displayEntries.length > 0" class="tool-calls-container">
-    <button
-      v-if="shouldCollapseToolCalls && !isKnowledgeSummaryGroup"
-      type="button"
+    <div
+      v-if="shouldCollapseToolCalls"
       class="tool-calls-summary"
-      :class="{ 'is-expanded': areToolCallsExpanded }"
-      :aria-expanded="areToolCallsExpanded"
-      @click="toggleToolCallsExpanded"
     >
       <span class="summary-leading">
         <Atom size="14" />
@@ -21,51 +17,17 @@
         }}</span>
         <span class="summary-status-tag" v-if="statusSummary">{{ statusSummary }}</span>
       </span>
-      <span class="summary-trailing">
-        <ChevronDown
-          :size="14"
-          class="summary-chevron"
-          :class="{ 'is-collapsed': !areToolCallsExpanded }"
-        />
-      </span>
-    </button>
-
-    <div
-      class="tool-calls-collapse-panel"
-      :class="{
-        'is-expanded': !shouldCollapseToolCalls || areToolCallsExpanded || isKnowledgeSummaryGroup,
-        'is-knowledge-summary-group': isKnowledgeSummaryGroup
-      }"
-    >
-      <div class="tool-calls-collapse-inner">
-        <div class="tool-calls-panel">
-          <div v-for="entry in displayEntries" :key="entry.key" class="tool-call-container">
-            <ReasoningBlockComponent
-              v-if="entry.type === 'reasoning'"
-              :content="entry.content"
-              :is-active="isActive && entry === displayEntries[displayEntries.length - 1]"
-            />
-            <ToolCallRenderer
-              v-else
-              :tool-call="entry.toolCall"
-              appearance="timeline"
-              :default-expanded="false"
-            />
-          </div>
-        </div>
-      </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { computed, ref, watch, inject, provide } from 'vue'
-import { ChevronDown, Atom } from '@lucide/vue'
+import { computed, inject, provide } from 'vue'
+import { Atom } from '@lucide/vue'
 import { storeToRefs } from 'pinia'
 import { useAgentStore } from '@/stores/agent'
 import { useUserStore } from '@/stores/user'
-import ReasoningBlockComponent from '@/components/ReasoningBlockComponent.vue'
-import { ToolCallRenderer } from '@/components/ToolCallingResult'
 import {
   getToolCallId,
   getToolCallDisplayStatus,
@@ -79,14 +41,13 @@ const { availableTools, toolMetadata } = storeToRefs(agentStore)
 
 const userStore = useUserStore()
 
-// 工具调用的参数（args）细节仅管理员可见（admin/superadmin 角色，或所属「管理员」部门）；
-// 教师/学生/访客类别仍可点击概要并展开查看工具调用本身（命令、输出），仅屏蔽参数细节。
+// 工具调用只在聊天流保留摘要；参数、命令、输出和子智能体执行详情不在前端展开。
 const canViewToolDetails = computed(() => {
   if (userStore.isAdmin) return true
   return String(userStore.departmentName || '').trim() === '管理员'
 })
 
-// 下发给所有工具卡（BaseToolCall 统一消费）：非管理员隐藏参数区，命令与输出不受影响。
+// 即使工具卡被其他视图复用，也继续隐藏参数区。
 provide(
   'hideToolParams',
   computed(() => !canViewToolDetails.value)
@@ -121,7 +82,7 @@ const displayEntries = computed(() =>
       }))
 )
 
-// 知识库原始命中片段仅用于智能体推理和答案溯源，不在聊天流展示文件、行号和片段细节。
+// 知识库原始命中片段仅用于智能体推理和答案溯源；聊天流保留工具摘要，具体文件、行号和片段默认收起。
 const KNOWLEDGE_SUMMARY_TOOL_IDS = new Set([
   'query_kb',
   'search_file',
@@ -140,31 +101,6 @@ const hasReasoning = computed(() =>
   displayEntries.value.some((entry) => entry.type === 'reasoning')
 )
 const shouldCollapseToolCalls = computed(() => displayEntries.value.length > 0)
-const areToolCallsExpanded = ref(false)
-
-watch(
-  [() => normalizedToolCalls.value.length, () => props.isActive],
-  ([, isActive], [, previousActive]) => {
-    // 如果是活跃状态，强制展开
-    if (isActive) {
-      areToolCallsExpanded.value = true
-      return
-    }
-
-    // 从活跃转为非活跃（例如：正文开始输出了），则收起
-    if (previousActive === true && isActive === false) {
-      areToolCallsExpanded.value = false
-      return
-    }
-
-    // 初始化或非活跃状态下，默认保持收起
-    if (!previousActive && !isActive) {
-      areToolCallsExpanded.value = false
-    }
-  },
-  { immediate: true }
-)
-
 // 工具名称展示优先级：display_label > 完整工具元数据中的 display name > 前端兜底名称映射 > 工具 id
 const getToolCallLabel = (toolCall) => {
   const displayLabel = String(toolCall?.display_label || '').trim()
@@ -183,6 +119,9 @@ const getToolCallLabel = (toolCall) => {
 const toolCallsSummaryTitle = computed(() => {
   if (normalizedToolCalls.value.length === 0) return props.isActive ? 'Thinking...' : '推理过程'
   if (hasReasoning.value) return `推理与工具调用 · ${normalizedToolCalls.value.length} 个工具`
+  if (normalizedToolCalls.value.length === 1 && isKnowledgeSummaryGroup.value) {
+    return getToolCallLabel(normalizedToolCalls.value[0])
+  }
   if (normalizedToolCalls.value.length === 1) {
     return `调用: ${getToolCallLabel(normalizedToolCalls.value[0])}`
   }
@@ -213,10 +152,6 @@ const statusSummary = computed(() => {
   return parts.join(' · ')
 })
 
-const toggleToolCallsExpanded = () => {
-  if (!shouldCollapseToolCalls.value) return
-  areToolCallsExpanded.value = !areToolCallsExpanded.value
-}
 </script>
 
 <style lang="less" scoped>
@@ -235,7 +170,7 @@ const toggleToolCallsExpanded = () => {
     gap: 8px;
     color: var(--gray-700);
     text-align: left;
-    cursor: pointer;
+    cursor: default;
     outline: none;
     border: none;
     padding: 0;

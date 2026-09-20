@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated
 
 import httpx
+from bs4 import BeautifulSoup
 from langchain.tools import InjectedToolCallId
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool as langchain_tool
@@ -30,6 +31,7 @@ _SAFE_OUTPUT_STEM_RE = re.compile(r"[^A-Za-z0-9._\-\u4e00-\u9fff]+")
 
 
 _DOUBAO_SEARCH_URL = "https://open.feedcoopapi.com/search_api/web_search"
+_BING_SEARCH_URL = "https://cn.bing.com/search"
 
 DOUBAO_SEARCH_DESCRIPTION = """执行网络网页搜索，通过豆包联网搜索获取实时高质量互联网网页内容、新闻和站点资料。
 
@@ -165,10 +167,76 @@ def _create_tavily_search():
     return TavilySearch(name="web_search")
 
 
-# provider -> (required env var, factory, display name)
+@langchain_tool("web_search", args_schema=DoubaoSearchInput, description=DOUBAO_SEARCH_DESCRIPTION)
+def _bing_search(
+    query: str,
+    count: int = 10,
+    time_range: str | None = None,
+    sites: list[str] | None = None,
+    block_hosts: list[str] | None = None,
+    content_format: str = "text",
+) -> dict:
+    """无需密钥的必应网页搜索后备实现。"""
+    search_query = query.strip()
+    if sites:
+        search_query = f"{search_query} ({' OR '.join(f'site:{site}' for site in sites[:20])})"
+    if block_hosts:
+        search_query = f"{search_query} {' '.join(f'-site:{host}' for host in block_hosts[:5])}"
+
+    params = {"q": search_query, "count": min(max(1, count), 50), "setlang": "zh-hans"}
+    if time_range in {"OneDay", "OneWeek", "OneMonth", "OneYear"}:
+        params["filters"] = {
+            "OneDay": "ex1:ez1",
+            "OneWeek": "ex1:ez2",
+            "OneMonth": "ex1:ez3",
+            "OneYear": "ex1:ez5_20041_20406",
+        }[time_range]
+
+    try:
+        with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+            response = client.get(
+                _BING_SEARCH_URL,
+                params=params,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; GeoChat/1.0)"},
+            )
+            response.raise_for_status()
+    except Exception as exc:
+        logger.error(f"Bing search failed: {exc}")
+        return {"query": query, "results": [], "error": str(exc)}
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    results = []
+    for item in soup.select("li.b_algo"):
+        link = item.select_one("h2 a")
+        if link is None or not link.get("href"):
+            continue
+        summary = item.select_one(".b_caption p") or item.select_one("p")
+        results.append(
+            {
+                "title": link.get_text(" ", strip=True),
+                "url": link.get("href"),
+                "content": summary.get_text(" ", strip=True) if summary else "",
+            }
+        )
+        if len(results) >= count:
+            break
+
+    payload = {"query": query, "results": results}
+    if not results:
+        payload["error"] = "必应未返回可解析的搜索结果"
+    return payload
+
+
+def _create_bing_search():
+    """Create the keyless Bing web search fallback."""
+    return _bing_search
+
+
+# provider -> (required env var, factory, display name); None means no key is required.
 _WEB_SEARCH_PROVIDERS = {
     "doubao": ("DOUBAO_SEARCH_API_KEY", _create_doubao_search, "豆包 网页搜索"),
     "tavily": ("TAVILY_API_KEY", _create_tavily_search, "Tavily 网页搜索"),
+    "bing": (None, _create_bing_search, "必应网页搜索"),
 }
 
 
@@ -178,16 +246,16 @@ def _resolve_web_search_provider() -> str | None:
     if configured:
         if configured not in _WEB_SEARCH_PROVIDERS:
             logger.warning(f"Unknown WEB_SEARCH_PROVIDER '{configured}', ignoring.")
-            return None
+            return "bing"
         env_key, _, _ = _WEB_SEARCH_PROVIDERS[configured]
-        if not os.getenv(env_key):
-            logger.warning(f"WEB_SEARCH_PROVIDER is set to '{configured}', but {env_key} is not configured.")
-            return None
+        if env_key and not os.getenv(env_key):
+            logger.warning(f"WEB_SEARCH_PROVIDER is set to '{configured}', but {env_key} is not configured; using Bing.")
+            return "bing"
         return configured
 
     return next(
-        (provider for provider, (env_key, _, _) in _WEB_SEARCH_PROVIDERS.items() if os.getenv(env_key)),
-        None,
+        (provider for provider, (env_key, _, _) in _WEB_SEARCH_PROVIDERS.items() if env_key and os.getenv(env_key)),
+        "bing",
     )
 
 
@@ -488,17 +556,6 @@ def ask_user_question(
     ] = None,
 ) -> dict:
     """向用户发起问题并等待回答。"""
-    # 解析 questions 参数：如果是字符串，尝试解析为 JSON
-    if isinstance(questions, str):
-        try:
-            import json
-
-            questions = json.loads(questions)
-            logger.debug(f"Parsed string questions to list: {questions}")
-        except Exception as e:
-            logger.error(f"Failed to parse questions string: {e}, using None")
-            questions = None
-
     normalized_questions = normalize_questions(questions or [])
 
     if not normalized_questions:

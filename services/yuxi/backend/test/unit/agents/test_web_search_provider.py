@@ -2,9 +2,11 @@ from unittest.mock import MagicMock, patch
 
 from yuxi.agents.toolkits.buildin.tools import (
     _all_tool_instances,
+    _create_bing_search,
     _create_doubao_search,
     _extra_registry,
     _register_web_search_tool,
+    _resolve_web_search_provider,
 )
 
 
@@ -83,3 +85,28 @@ def test_register_web_search_tool_provider_selection(monkeypatch):
     assert _extra_registry["web_search"].display_name == "豆包 网页搜索"
     assert len(_all_tool_instances) == instances_before + 1
     assert _all_tool_instances[-1].name == "web_search"
+
+
+def test_web_search_defaults_to_bing_without_api_keys(monkeypatch):
+    monkeypatch.delenv("WEB_SEARCH_PROVIDER", raising=False)
+    monkeypatch.delenv("DOUBAO_SEARCH_API_KEY", raising=False)
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+    assert _resolve_web_search_provider() == "bing"
+
+
+def test_bing_search_parses_results(monkeypatch):
+    html = """
+    <ol><li class="b_algo"><h2><a href="https://example.edu/item">地质资料</a></h2>
+    <div class="b_caption"><p>权威资料摘要</p></div></li></ol>
+    """
+    response = MagicMock()
+    response.text = html
+    response.raise_for_status.return_value = None
+
+    with patch("httpx.Client.get", return_value=response):
+        result = _create_bing_search().invoke({"query": "地质资料", "count": 5})
+
+    assert result["results"] == [
+        {"title": "地质资料", "url": "https://example.edu/item", "content": "权威资料摘要"}
+    ]

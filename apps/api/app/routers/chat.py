@@ -29,7 +29,7 @@ async def stream_chat(request: ChatRequest, session: Session = Depends(get_db)) 
     async def event_source():
         citations = search_published_knowledge(session, request.message)
         resources = search_portal_resources(session, request.message)
-        reply = await generate_grounded_answer(get_settings(), request, citations)
+        reply = await generate_grounded_answer(get_settings(), request, citations, resources)
         for token in reply:
             yield f"event: token\ndata: {json.dumps({'content': token}, ensure_ascii=False)}\n\n"
             await asyncio.sleep(0.012)

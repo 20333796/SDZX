@@ -66,6 +66,28 @@ def test_ask_user_question_accepts_json_string_questions(monkeypatch):
     assert result["answer"] == {"q-1": "A"}
 
 
+def test_ask_user_question_accepts_json_with_trailing_model_text(monkeypatch):
+    captured_payloads = []
+    questions = json.dumps(
+        [
+            {
+                "question_id": "scope",
+                "question": "需要全面综述还是聚焦某类方法？",
+                "options": ["全面综述", "聚焦经验公式"],
+            }
+        ],
+        ensure_ascii=False,
+    )
+    malformed_model_argument = f"{questions}\n我将等待用户选择后继续。"
+
+    monkeypatch.setattr(tools, "interrupt", lambda payload: captured_payloads.append(payload) or {"scope": "全面综述"})
+
+    result = tools.ask_user_question.func(questions=malformed_model_argument)
+
+    assert captured_payloads[0]["questions"][0]["question"] == "需要全面综述还是聚焦某类方法？"
+    assert result["answer"] == {"scope": "全面综述"}
+
+
 def test_ask_user_question_rejects_empty_questions():
     with pytest.raises(ValueError, match="questions 至少需要包含一个有效问题"):
         tools.ask_user_question.func(questions=[])

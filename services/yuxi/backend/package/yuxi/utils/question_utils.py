@@ -8,6 +8,32 @@ _WRAPPER_OPTION_KEYS = ("item", "items", "options", "list", "choices", "data")
 _WRAPPER_QUESTION_KEYS = ("questions", "items", "item", "list", "data")
 
 
+def _parse_json_value(value: str) -> Any:
+    """解析模型生成的 JSON，并容忍完整 JSON 后附带的解释文本。"""
+    text = value.strip()
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1 :]
+
+    try:
+        return json.loads(text)
+    except (TypeError, ValueError, RecursionError):
+        pass
+
+    decoder = json.JSONDecoder()
+    for marker in ("[", "{"):
+        start = text.find(marker)
+        if start == -1:
+            continue
+        try:
+            parsed, _ = decoder.raw_decode(text[start:])
+            return parsed
+        except (TypeError, ValueError, RecursionError):
+            continue
+    return value
+
+
 def _normalize_collection(
     value: Any,
     *,
@@ -17,12 +43,9 @@ def _normalize_collection(
 ) -> list[Any]:
     """把 JSON、包装对象或单项对象统一成列表。"""
     if isinstance(value, str):
-        try:
-            parsed = json.loads(value)
-            if not isinstance(parsed, str):
-                value = parsed
-        except (TypeError, ValueError, RecursionError):
-            return []
+        parsed = _parse_json_value(value)
+        if not isinstance(parsed, str):
+            value = parsed
 
     if isinstance(value, list):
         return value

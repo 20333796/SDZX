@@ -901,6 +901,7 @@ import { AgentValidator } from '@/utils/agentValidator'
 import {
   extractPageTitle,
   extractPageSummary,
+  formatWebResourceTitle,
   toolResultContentText
 } from '@/utils/retrievalExtract'
 import { useAgentStore } from '@/stores/agent'
@@ -2376,7 +2377,7 @@ const conversationRows = computed(() => {
   return rows
 })
 
-// ==================== 外部网页访问记录提取（右侧面板） ====================
+// ==================== 资源记录提取（右侧面板） ====================
 const WEB_FETCH_TOOL_KEYWORDS = ['execute']
 const MAX_RETRIEVAL_RECORDS = 50
 const MAX_RECORD_HITS = 3
@@ -2426,7 +2427,7 @@ const formatRecordTime = (createdAt) => {
   return time.isSame(now, 'day') ? time.format('HH:mm') : time.format('MM-DD HH:mm')
 }
 
-// 从一批消息里提取实际外部网页访问记录并追加到 records（按 seenKeys 去重）。
+// 从一批消息里提取实际资源记录并追加到 records（按 seenKeys 去重）。
 // 仅收录 execute 等命令工具中携带 http(s) 网址的调用，例如 curl 抓取网页；
 // 网络搜索、知识库检索及本地文件操作不会出现在这个面板中。
 const pushRetrievalRecordsFromMessages = (messages, records, seenKeys) => {
@@ -2437,29 +2438,23 @@ const pushRetrievalRecordsFromMessages = (messages, records, seenKeys) => {
       const toolName = String(toolCall?.name || toolCall?.function?.name || '').toLowerCase()
       if (!toolName) return
 
-      let kindLabel = ''
-      let title = ''
-      let hits = []
+      if (!isWebFetchToolName(toolName)) return
 
-      if (isWebFetchToolName(toolName)) {
-        hits = extractWebFetchHits(toolCall)
-        if (!hits.length) return
-        kindLabel = '网页访问'
-        // 从执行结果（curl 抓取的 HTML/文本）提取网页标题与内容概述；
-        // 同一命令抓取多个网址时结果混在一起，标题/概述取整体首个解析值，仅作概览展示。
-        const resultText = toolResultContentText(toolCall?.tool_call_result?.content)
-        const pageTitle = extractPageTitle(resultText)
-        const pageSummary = extractPageSummary(resultText)
-        if (pageTitle) {
-          hits = hits.map((hit) => ({ ...hit, label: pageTitle, summary: pageSummary }))
-          title = pageTitle
-        } else {
-          title = hits[0].label
-          if (pageSummary) hits = hits.map((hit) => ({ ...hit, summary: pageSummary }))
-        }
-      } else {
-        return
-      }
+      const rawHits = extractWebFetchHits(toolCall)
+      if (!rawHits.length) return
+
+      // 从执行结果（curl 抓取的 HTML/文本）提取网页标题与内容概述；
+      // 同一命令抓取多个网址时结果混在一起，标题/概述取整体首个解析值，仅作概览展示。
+      const resultText = toolResultContentText(toolCall?.tool_call_result?.content)
+      const pageTitle = extractPageTitle(resultText)
+      const pageSummary = extractPageSummary(resultText)
+      const hits = rawHits.map((hit) => ({
+        ...hit,
+        label: formatWebResourceTitle(hit.url, pageTitle),
+        summary: pageSummary
+      }))
+      const kindLabel = '网页访问'
+      const title = hits[0].label
 
       const key = String(toolCall?.id || `${toolName}-${msg.id || ''}-${callIndex}`)
       if (seenKeys.has(key)) return

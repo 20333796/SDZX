@@ -46,7 +46,7 @@ BUILTIN_SKILLS: list[BuiltinSkillSpec] = [
         slug="knowledge-base",
         source_dir=_SKILLS_ROOT / "knowledge-base",
         description="使用地智知识库进行检索、打开文档、文档内定位和查看思维导图。",
-        version="2026.06.24",
+        version="2026.09.20",
         tool_dependencies=(
             "list_kbs",
             "query_kb",
@@ -55,6 +55,7 @@ BUILTIN_SKILLS: list[BuiltinSkillSpec] = [
             "get_mindmap",
             "search_file",
             "download_kb_file",
+            "web_search",
         ),
     ),
     BuiltinSkillSpec(

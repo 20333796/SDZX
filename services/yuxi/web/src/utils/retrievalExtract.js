@@ -25,6 +25,37 @@ const decodeEntities = (text) =>
 
 const clip = (text, maxLen) => (text.length > maxLen ? `${text.slice(0, maxLen)}…` : text)
 
+const SOURCE_NAMES = [
+  [/^(?:www\.)?cae\.cn$/i, '中国工程院'],
+  [/^(?:www\.|m\.)?bing\.com$/i, '必应'],
+  [/^(?:html\.)?duckduckgo\.com$/i, 'DuckDuckGo'],
+  [/^(?:www\.)?baidu\.com$/i, '百度'],
+  [/^(?:www\.)?google\.[a-z.]+$/i, 'Google']
+]
+
+const cleanExecutionPrefix = (text) =>
+  text
+    .replace(/^\s*size\s+\d+\s+CTX:\s*/i, '')
+    .replace(/^\s*(?:stdout|output|content):\s*/i, '')
+    .trim()
+
+/** 标题缺失时生成用户可读名称，避免把完整 URL 和编码查询串当标题。 */
+export const formatWebResourceTitle = (url, pageTitle = '') => {
+  const normalizedTitle = cleanExecutionPrefix(String(pageTitle || '')).trim()
+  if (normalizedTitle && !/^https?:\/\//i.test(normalizedTitle)) return clip(normalizedTitle, 80)
+
+  try {
+    const parsed = new URL(url)
+    const hostname = parsed.hostname.replace(/^www\./i, '')
+    const sourceName = SOURCE_NAMES.find(([pattern]) => pattern.test(parsed.hostname))?.[1] || hostname
+    const query = parsed.searchParams.get('q')?.replace(/\s+/g, ' ').trim()
+    if (query) return clip(`${sourceName}搜索：${query}`, 80)
+    return `${sourceName}网页`
+  } catch {
+    return '外部网页'
+  }
+}
+
 /** HTML → 正文文本：剥 script/style/注释，块级标签转空格、行内标签删除，实体解码后压缩空白 */
 const stripHtml = (html) =>
   decodeEntities(
@@ -58,7 +89,7 @@ export const extractPageTitle = (content) => {
 export const extractPageSummary = (content, maxLen = 120) => {
   if (typeof content !== 'string' || !content) return ''
   const bodyMatch = content.match(BODY_RE)
-  const text = stripHtml(bodyMatch?.[1] ?? content)
+  const text = cleanExecutionPrefix(stripHtml(bodyMatch?.[1] ?? content))
   return text ? clip(text, maxLen) : ''
 }
 
