@@ -32,11 +32,14 @@
                   :key="hit.key"
                   type="button"
                   class="record-hit"
-                  :title="hit.label"
+                  :title="hit.summary || hit.label"
                   @click="openHit(hit)"
                 >
-                  <Globe :size="12" class="record-hit__icon" />
-                  <span class="record-hit__label">{{ hit.label }}</span>
+                  <span class="record-hit__title">
+                    <Globe :size="12" class="record-hit__icon" />
+                    <span class="record-hit__label">{{ hit.label }}</span>
+                  </span>
+                  <span v-if="hit.summary" class="record-hit__summary">{{ hit.summary }}</span>
                 </button>
                 <span v-if="record.extraCount > 0" class="record-hit record-hit--more">
                   +{{ record.extraCount }}
@@ -103,7 +106,7 @@ import { ref, watch } from 'vue'
 import { ExternalLink, Globe, X } from '@lucide/vue'
 
 const props = defineProps({
-  /** 网络检索记录列表（由 AgentChatComponent 从会话消息中提取，含跨线程缓存） */
+  /** 当前对话的检索记录列表（由 AgentChatComponent 从本线程消息中提取，不含跨对话缓存） */
   records: {
     type: Array,
     default: () => []
@@ -355,24 +358,30 @@ const handleFrameLoad = () => {
 
     .record-card__hits {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: stretch;
       gap: 4px;
     }
   }
 
+  // 单条命中：标题行（可点开网页）+ 内容概述两行
   .record-hit {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    max-width: 100%;
+    display: block;
+    width: 100%;
+    text-align: left;
     border: 1px solid var(--gray-150);
     border-radius: 6px;
     background: var(--gray-0);
-    padding: 2px 6px;
-    font-size: 12px;
-    color: var(--gray-700);
+    padding: 4px 8px;
     cursor: pointer;
     transition: all 0.15s ease;
+
+    .record-hit__title {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
 
     .record-hit__icon {
       flex-shrink: 0;
@@ -381,10 +390,23 @@ const handleFrameLoad = () => {
 
     .record-hit__label {
       min-width: 0;
-      max-width: 220px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 12px;
+      color: var(--gray-700);
+    }
+
+    .record-hit__summary {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 2px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--gray-500);
+      word-break: break-word;
     }
 
     &:hover {
@@ -393,7 +415,10 @@ const handleFrameLoad = () => {
     }
 
     &.record-hit--more {
+      align-self: flex-start;
+      width: auto;
       cursor: default;
+      font-size: 12px;
       color: var(--gray-500);
       background: transparent;
       border-style: dashed;

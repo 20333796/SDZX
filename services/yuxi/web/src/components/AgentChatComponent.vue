@@ -792,7 +792,7 @@
           v-if="isRetrievalPanelOpen"
           id="agent-retrieval-panel"
           :class="['retrieval-side-panel', { 'is-browsing': isPanelBrowsing }]"
-          :records="mergedRetrievalRecords"
+          :records="retrievalRecords"
           :pending-link="pendingPanelLink"
           @close="isRetrievalPanelOpen = false"
           @browsing-change="isPanelBrowsing = $event"
@@ -899,9 +899,11 @@ import {
 } from '@/utils/contextUsage'
 import { AgentValidator } from '@/utils/agentValidator'
 import {
-  loadCachedRetrievalRecords,
-  mergeRetrievalRecordsIntoCache
-} from '@/utils/retrievalRecordCache'
+  extractPageTitle,
+  extractPageSummary,
+  pickSearchSummary,
+  toolResultContentText
+} from '@/utils/retrievalExtract'
 import { useAgentStore } from '@/stores/agent'
 import { useChatThreadsStore } from '@/stores/chatThreads'
 import { useChatUIStore } from '@/stores/chatUI'
@@ -2467,7 +2469,8 @@ const retrievalRecords = computed(() => {
             const hitTitle = typeof item?.title === 'string' ? item.title.trim() : ''
             const url = typeof item?.url === 'string' ? item.url.trim() : ''
             if (!hitTitle || !url) continue
-            hits.push({ key: url, type: 'url', label: hitTitle, url })
+            // 概述：结果条目的 content/snippet 等字段（不同引擎字段名不一，pickSearchSummary 兜底）
+            hits.push({ key: url, type: 'url', label: hitTitle, url, summary: pickSearchSummary(item) })
           }
           if (!hits.length) return
           kindLabel = '网络搜索'
@@ -2476,7 +2479,18 @@ const retrievalRecords = computed(() => {
           hits = extractWebFetchHits(toolCall)
           if (!hits.length) return
           kindLabel = '网页访问'
-          title = hits[0].label
+          // 从执行结果（curl 抓取的 HTML/文本）提取网页标题与内容概述；
+          // 同一命令抓取多个网址时结果混在一起，标题/概述取整体首个解析值，仅作概览展示。
+          const resultText = toolResultContentText(toolCall?.tool_call_result?.content)
+          const pageTitle = extractPageTitle(resultText)
+          const pageSummary = extractPageSummary(resultText)
+          if (pageTitle) {
+            hits = hits.map((hit) => ({ ...hit, label: pageTitle, summary: pageSummary }))
+            title = pageTitle
+          } else {
+            title = hits[0].label
+            if (pageSummary) hits = hits.map((hit) => ({ ...hit, summary: pageSummary }))
+          }
         } else {
           return
         }
@@ -2500,32 +2514,8 @@ const retrievalRecords = computed(() => {
   return records.reverse().slice(0, MAX_RETRIEVAL_RECORDS)
 })
 
-// 跨线程检索记录缓存：当前线程有新检索时并入本地缓存，
-// 面板展示 = 缓存 + 当前线程实时记录（key 去重，savedAt 降序）。
-const savedRetrievalRecords = ref(loadCachedRetrievalRecords())
-watch(
-  retrievalRecords,
-  (records) => {
-    if (!records.length) return
-    const next = mergeRetrievalRecordsIntoCache(records, {
-      threadId: currentChatId.value || '',
-      threadTitle: currentThread.value?.title || ''
-    })
-    savedRetrievalRecords.value = next
-  },
-  { immediate: true }
-)
-
-const mergedRetrievalRecords = computed(() => {
-  const byKey = new Map()
-  for (const rec of savedRetrievalRecords.value) byKey.set(rec.key, rec)
-  for (const rec of retrievalRecords.value) {
-    byKey.set(rec.key, { ...rec, savedAt: rec.savedAt || Date.now() })
-  }
-  return [...byKey.values()]
-    .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))
-    .slice(0, MAX_RETRIEVAL_RECORDS)
-})
+// 「最近检索」仅展示当前对话（线程）内发生的检索记录，
+// 不再跨线程合并 localStorage 缓存（切换对话即只看当前对话的检索）。
 
 // 消息正文里的外部链接 → 面板内嵌打开（MarkdownPreview 通过 inject 调用，无 provider 时新窗口兜底）
 const pendingPanelLink = ref(null)
